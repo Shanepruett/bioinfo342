@@ -1,6 +1,6 @@
 bioinfo342
 ==========
-
+test
 Entry Template:
 
 Date/Time: xx/xx hour:minutes
