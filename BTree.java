@@ -1,3 +1,12 @@
+/**
+ * @author:
+ * @class:
+ * @assignment:
+ * 
+ * @description:
+ */
+
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -7,8 +16,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-
 
 
 public class BTree{
@@ -73,6 +80,11 @@ public class BTree{
 		
 	}
 	
+	
+	/**
+	 * 
+	 * @param fileName
+	 */
 	public BTree(String fileName){
 		
 		
@@ -150,6 +162,11 @@ public class BTree{
 		return location * nodeSize + headerSize;
 	}
 	
+	/**
+	 * 
+	 * @param location
+	 * @return
+	 */
 	private BTreeNode GetNode(int location){
 		
 		int bitLocation = nodeLocation(location);
@@ -299,7 +316,11 @@ public class BTree{
 	}
 	
 	
-	
+	/**
+	 * 
+	 * @param args
+	 * @throws IOException
+	 */
 	public static void main(String[] args) throws IOException {
 		
 		// Testing of asByteArray (int)
@@ -350,7 +371,11 @@ public class BTree{
 
 	
 	
-	
+	/**
+	 * 
+	 * @author 
+	 *
+	 */
 	public class BTreeNode{
 		
 		private byte currentObjects;
@@ -399,7 +424,11 @@ public class BTree{
 			
 		}
 		
-		
+		/**
+		 * 
+		 * @author 
+		 *
+		 */
 		public class TreeObject{
 			
 			private int frequency;
