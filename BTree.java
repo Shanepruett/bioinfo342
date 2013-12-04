@@ -7,33 +7,54 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 
 
 
 
+/**
+ * BTree is a store class, Binary Tree with a degree set at creation. There are
+ * zero of more BTreeNodes which contain at least one BTreeObject. BTree creates a 
+ * large binary file it stores the node data in. The Nodes may be retrieved from the
+ * Binary Tree using normal methods
+ * 
+ * @author Shane
+ *
+ */
 public class BTree{
 	
-	private int nodeSize;
-	private int headerSize;
+	private int nodeSize; // All Nodes have the same size based on degree of BTree
+	private final int headerSize = 128; // size of the metadata used for BTree, Always the same
 	private int sequenceLength; // the k value from handout, 3.2 Problem pg. 3, 1 - 31 
 	private int degree; // the degree of BTree
-	private int rootLocation;
-	private int numberOfNodes;
-	private String filename;
+	private int rootLocation; //location of root
+	private int numberOfNodes; 
+	private String filename; // filename of binary file
 	
 //	private boolean usingCache; 
 //	private int cacheSize;
 	
 //	private int debugLevel;
 	
-	private BTreeNode root;
+	// This is the root Node
+	public BTreeNode root;
 	
 	
+	
+	/**
+	 * This is the constructor of the BTree which will be used when its a new BTree
+	 * 
+	 * @param sequenceLength how long are the sequences
+	 * @param degree the degree of the BTree
+	 */
 	public BTree(int sequenceLength, int degree){
 		this.sequenceLength = sequenceLength;
 		this.degree = degree;
 		
-		this.headerSize = 192; // number of bits of header
+		// This is always the same regardless of the degree
+		// Node size (32) +  SequenceLength (32) + degree (32) + number of nodes (32)
+		//this.headerSize = 128; // number of bits of header
+		
 		// Metadata size (32) + Pointer size (32) * (Parent loc + Degree + 1) + Degree * Object Size        
 		this.nodeSize = 32 + 32 * (degree + 2) + 96 * degree;
 		
@@ -41,17 +62,20 @@ public class BTree{
 		this.numberOfNodes = 0;
 		
 		byte[] header = concat(asByteArray(nodeSize),
-							concat(asByteArray(headerSize),
 								concat(asByteArray(sequenceLength),
-									concat(asByteArray(degree),asByteArray(numberOfNodes)))));
+									concat(asByteArray(degree),asByteArray(numberOfNodes))));
 		
 		System.out.println("NodeSize = " + nodeSize + "\nHeaderSize = " + headerSize + "\nsequenceLength = " + sequenceLength);
-		System.out.println("|--nodeSize--------------------||--headerSize------------------||--sequenceLength--------------||--degree----------------------||--numberofnodes---------------|");
+		System.out.println("|--nodeSize--------------------||--sequenceLength--------------||--degree----------------------||--numberofnodes---------------|");
+		System.out.println(header.length);
 		for (int i = 0; i < header.length; i++){
 		System.out.print(header[i]);
 		}
 		
 		this.filename = "filename.gbk.btree.data." + sequenceLength + "." + degree;
+		
+		//TODO
+		FileChannel fc = (FileChannel.open(new File(filename), READ, WRITE));
 		
 		try {
 		      OutputStream output = null;
@@ -73,13 +97,16 @@ public class BTree{
 		
 	}
 	
+	/**
+	 * Constructor of BTree given the name of a file. This is used when there is an existing binary file.
+	 * 
+	 * @param fileName
+	 */
 	public BTree(String fileName){
-		
-		
 		
 		File file = new File(fileName);
 		
-	    byte[] result = new byte[(int)file.length()];
+	    byte[] result = new byte[headerSize];
 	    try {
 	      InputStream input = null;
 	      try {
@@ -112,16 +139,20 @@ public class BTree{
 	    }
 		
 		this.nodeSize = byteArrayAsInt(result,0);
-		this.headerSize = byteArrayAsInt(result,32);
+		//this.headerSize = byteArrayAsInt(result,32);
 		
-		this.sequenceLength = byteArrayAsInt(result,64);
+		this.sequenceLength = byteArrayAsInt(result,32);
 	     
-		this.degree = byteArrayAsInt(result,96);
+		this.degree = byteArrayAsInt(result,64);
 		
 		this.rootLocation = headerSize; // root is first Node
-		this.numberOfNodes = byteArrayAsInt(result,128);
+		this.numberOfNodes = byteArrayAsInt(result,96);
 		this.filename = fileName;
 	    
+		if (numberOfNodes > 0){
+			this.root = getRoot();
+		}
+		
 		System.out.print("seqL = " + this.sequenceLength + "\n" +
 						  "degree = " + this.degree + "\n" +
 						  "headerSize = " + this.headerSize + "\n" +
@@ -129,10 +160,6 @@ public class BTree{
 						  "rootLocation = " + this.rootLocation + "\n" +
 						  "numberOfNodes = " + this.numberOfNodes);
 		
-		
-//		for (int i = 0; i < result.length; i++){
-//		System.out.print(result[i]);
-//		}
 		
 	}
 	
@@ -150,7 +177,23 @@ public class BTree{
 		return location * nodeSize + headerSize;
 	}
 	
-	private BTreeNode GetNode(int location){
+	/**
+	 * This method retrieves the root Node. This does not need to be used. As root node is public.
+	 * 
+	 * @return root node
+	 */
+	public BTreeNode getRoot(){
+		return getNode(rootLocation);
+	}
+	
+	
+	/**
+	 * This method returns a Node given its location in the bin file
+	 * 
+	 * @param location
+	 * @return
+	 */
+	public BTreeNode getNode(int location){
 		
 		int bitLocation = nodeLocation(location);
 		
@@ -189,7 +232,7 @@ public class BTree{
 	    	System.err.println(ex);
 	    }
 		
-		
+		//TODO: interpret byte array
 	    
 	    
 		
@@ -213,6 +256,24 @@ public class BTree{
 		   return C;
 		}
 	
+	/**
+	 * This method concatenates an int array as a byte array, recursively
+	 * 
+	 * @param array
+	 * @return
+	 */
+	private static byte[] concat(int[] array){
+		
+		if (array.length == 1)
+			return asByteArray(array[0]);
+		
+		int[] end = new int[array.length -1];
+		
+		for (int i = 0; i < end.length; i++)
+			end[i] = array[i+1];
+		
+		return concat(asByteArray(array[0]), concat(end));
+	}
 	
 	/**
 	 * This method converts an integer to a byte array binary representation
@@ -298,6 +359,19 @@ public class BTree{
 		return val;
 	}
 	
+	public BTreeNode insertNode(int parent, long seq){
+		
+
+		
+		BTreeNode newNode = new BTreeNode(parent,seq);
+		newNode.writeNode();
+		
+		if (parent == -1)
+			this.root = newNode;
+		
+		return newNode;
+	}
+	
 	
 	
 	public static void main(String[] args) throws IOException {
@@ -338,9 +412,12 @@ public class BTree{
 		// Testing of constructor
 		BTree theTree = new BTree (3 ,3);
 		System.out.println();
+		theTree.insertNode(-1, 65L);
 //		
+		//theTree;
+		
 		// Testing of filename Constructor
-		BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
+//		BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
 		
 	}
 	
@@ -353,25 +430,36 @@ public class BTree{
 	
 	public class BTreeNode{
 		
-		private byte currentObjects;
+		private int currentObjects; //number of objects in Node
 		private int parentNodeLocation; // location of parent Node
-		private int[] childNodeLocations;
-		private TreeObject[] objects;
+		private int[] childNodeLocations; // array of child node locations
+		private TreeObject[] objects; // objects in node
+		private int selfNodeLocation;
+		
+		
 		
 		/**
-		 * Constructor for new Node given the sequence
+		 * Constructor for new Node given the sequence as a long
 		 * 
 		 * @param parentLoc 
 		 * @param seq long representing a sequence
 		 */
 		public BTreeNode(int parentLoc, long seq){
 			
+			//initialize arrays
 			this.childNodeLocations = new int[degree + 1];
 			this.objects = new TreeObject[degree];
+			
+			//parent location
 			this.parentNodeLocation = parentLoc;
 			
+			
+			// new node, so only one object
 			this.currentObjects = 1;
 			this.objects[0] = new TreeObject(seq);
+			
+			// this nodes location, used for writing
+			this.selfNodeLocation = numberOfNodes++;
 			
 			for (int i = 0; i < childNodeLocations.length; i++){
 				childNodeLocations[i] = -1;
@@ -379,8 +467,10 @@ public class BTree{
 			
 		}
 		
+		
+		
 		/**
-		 * Constructor give a byte array representation of Node as read by binary file
+		 * Constructor given a byte array representation of Node as read by binary file
 		 * 
 		 * @param array 
 		 */
@@ -390,7 +480,8 @@ public class BTree{
 			this.objects = new TreeObject[degree];
 //			this.parentNodeLocation = parentLoc;
 			
-			this.currentObjects = 1;
+			//TODO fix
+			this.currentObjects = 1;//FIX
 //			this.objects[0] = obj;
 			
 			for (int i = 0; i < childNodeLocations.length; i++){
@@ -399,35 +490,158 @@ public class BTree{
 			
 		}
 		
+		/**
+		 * Recursively get byte array representation of objects
+		 * 
+		 * @param objs
+		 * @return
+		 */
+		private byte[] getObjectArrayBytes(TreeObject[] objs){
+			
+			if (objs.length == 1)
+				return objs[0] == null? getNullByteCode() : objs[0].getByteCode();
+			
+			TreeObject[] end = new TreeObject[objs.length -1];
+			
+			for (int i = 0; i < end.length; i++)
+				end[i] = objs[i+1];
+			
+			return concat(objs[0] == null? getNullByteCode() : objs[0].getByteCode(), getObjectArrayBytes(end));
+		}
 		
+		public byte[] getNullByteCode(){
+			return concat(asByteArray(-1),asByteArray(-1L));
+		}
+		
+		public void writeNode(){
+			
+			int bitLocation = selfNodeLocation * nodeSize + headerSize;
+			byte[] result = new byte[nodeSize];
+			
+			System.out.println("Selfnodelocation: " + selfNodeLocation);
+			
+			result = concat(asByteArray(currentObjects),
+								concat(asByteArray(parentNodeLocation),
+										concat(concat(childNodeLocations),
+												getObjectArrayBytes(objects))));
+			
+			try {
+			      OutputStream output = null;
+			      try {
+			    	
+			        output = new BufferedOutputStream(new FileOutputStream(filename));
+			        //output.
+			        System.out.println("result size: " + result.length + " bitLocation: " + bitLocation + " nodeSize: " + nodeSize);
+			        output.write(result,0,nodeSize);
+			      }
+			      finally {
+			        output.close();
+			      }
+			    }
+			    catch(FileNotFoundException ex){
+			      System.err.println(ex);
+			    }
+			    catch(IOException ex){
+			    	System.err.println(ex);
+			    }
+			
+			for (int i = 0; i < result.length; i++){
+				System.out.print(result[i]);
+				}
+			
+		}
+		
+		/**
+		 * Tree Object. Has a frequency and a sequence which is also its key value
+		 * 
+		 * @author Shane
+		 *
+		 */
 		public class TreeObject{
 			
+			
+			
+			@Override
+			public boolean equals(Object obj) {
+				if (this == obj)
+					return true;
+				if (obj == null)
+					return false;
+				if (getClass() != obj.getClass())
+					return false;
+				TreeObject other = (TreeObject) obj;
+				if (!getOuterType().equals(other.getOuterType()))
+					return false;
+				if (sequence != other.sequence)
+					return false;
+				return true;
+			}
+
 			private int frequency;
 			private long sequence;
 			
+			/**
+			 * Construct a Tree object from a string sequence. Use this constructor 
+			 * if this is the first appearance of the sequence.
+			 * 
+			 * @param seq
+			 */
 			public TreeObject(String seq){
 				this.frequency = 1;
 				this.sequence = convertSeq(seq);
 				
 			}
 			
+			/**
+			 * Construct a Tree object from a sequence in long form. Use this constructor 
+			 * if this is the first appearance of the sequence.
+			 * 
+			 * @param seq
+			 */
 			public TreeObject(long seq){
 				this.frequency = 1;
 				this.sequence = seq;
 				
 			}
 			
+			/**
+			 * Construct a Tree object from a String sequence and a frequency. Use this
+			 * constructor when the BTreeNode is being created from the bin file
+			 * 
+			 * @param seq
+			 * @param freq
+			 */
 			public TreeObject(String seq, int freq){
 				this.frequency = freq;
 				this.sequence = convertSeq(seq);
 				
 			}
 			
+			/**
+			 * Construct a Tree object from a sequence in long form and a frequency. Use this
+			 * constructor when the BTreeNode is being created from the bin file
+			 * 
+			 * @param seq
+			 * @param freq
+			 */
 			public TreeObject(long seq, int freq){
 				this.frequency = freq;
 				this.sequence = seq;
 				
 			}
+			
+			/**
+			 * This method returns a byte array representation of the TreeObject
+			 * 
+			 * @return
+			 */
+			public byte[] getByteCode(){
+				
+				return concat(asByteArray(frequency),asByteArray(sequence));
+			}
+			
+
+			
 			
 			/**
 			 * returns the long representation of the sequence
@@ -475,7 +689,7 @@ public class BTree{
 			 * increment the frequency
 			 */
 			public void incrementFreq(){
-				frequency++;
+				this.frequency++;
 			}
 			
 			/**
@@ -484,7 +698,7 @@ public class BTree{
 			 * @return int
 			 */
 			public int getFreq(){
-				return frequency;
+				return this.frequency;
 			}
 			
 			/**
@@ -527,6 +741,10 @@ public class BTree{
 			@Override
 			public String toString() {
 				return "" + frequency + " " + getSequenceString();
+			}
+
+			private BTreeNode getOuterType() {
+				return BTreeNode.this;
 			}
 			
 			
