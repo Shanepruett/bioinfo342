@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
 
+
 /**
  * BTree is a store class, Binary Tree with a degree set at creation. There are
  * zero of more BTreeNodes which contain at least one BTreeObject. BTree creates a 
@@ -147,49 +148,8 @@ public class BTree{
 		}
 
 
-		//File file = new File(fileName);
-		//
-		//		byte[] result = new byte[headerSize];
-		//		try {
-		//			InputStream input = null;
-		//			try {
-		//				int totalBytesRead = 0;
-		//				input = new BufferedInputStream(new FileInputStream(file));
-		//
-		//				while(totalBytesRead < result.length){
-		//					int bytesRemaining = result.length - totalBytesRead;
-		//					//input.read() returns -1, 0, or more :
-		//					int bytesRead = input.read(result, totalBytesRead, bytesRemaining); 
-		//					if (bytesRead > 0){
-		//						totalBytesRead = totalBytesRead + bytesRead;
-		//					}
-		//				}
-		//
-		//				//	         the above style is a bit tricky: it places bytes into the 'result' array; 
-		//				//	         'result' is an output parameter;
-		//				//	         the while loop usually has a single iteration only.
-		//
-		//			}
-		//			finally {
-		//				input.close();
-		//			}
-		//		}
-		//		catch (FileNotFoundException ex) {
-		//			System.err.println("File not found.");
-		//		}
-		//		catch (IOException ex) {
-		//			System.err.println(ex);
-		//		}
-
-		//		this.nodeSize = buf.getInt(0);//byteArrayAsInt(result,0);
-		//		//this.headerSize = byteArrayAsInt(result,32);
-		//
-		//		this.sequenceLength = buf.getInt(32);//byteArrayAsInt(result,32);
-		//
-		//		this.degree = buf.getInt(64);//byteArrayAsInt(result,64);
-
-		this.rootLocation = headerSize; // root is first Node
-		//		this.numberOfNodes = buf.getInt(96);//byteArrayAsInt(result,96);
+		this.rootLocation = headerSize; 
+		
 		this.filename = fileName;
 
 		if (numberOfNodes > 0){
@@ -198,9 +158,9 @@ public class BTree{
 
 		System.out.print("seqL = " + this.sequenceLength + "\n" +
 				"degree = " + this.degree + "\n" +
-				"headerSize = " + this.headerSize + "\n" +
+				//"headerSize = " + this.headerSize + "\n" +
 				"nodeSize = " + this.nodeSize + "\n" +
-				"rootLocation = " + this.rootLocation + "\n" +
+				//"rootLocation = " + this.rootLocation + "\n" +
 				"numberOfNodes = " + this.numberOfNodes);
 
 
@@ -242,20 +202,21 @@ public class BTree{
 
 		byte[] result = new byte[nodeSize];
 
-		RandomAccessFile aFile;
+//		RandomAccessFile aFile;
 		ByteBuffer buf;
 		int bytesRead = 0;
 
 		try{
-			aFile = new RandomAccessFile(filename, "rw");
+//			aFile = new RandomAccessFile(filename, "rw");
 			//fc = aFile.getChannel();
-			buf = ByteBuffer.allocate(headerSize);
+			buf = ByteBuffer.allocate(nodeSize);
 			
-			bytesRead = fc.read(buf, 0);
-			buf.flip();
+			bytesRead = fc.read(buf, bitLocation);
+			buf.clear();
 			
+			System.out.println(buf.remaining());
 			
-			buf.get(result, 0, headerSize);
+			buf.get(result, 0, nodeSize);
 
 //			this.nodeSize = byteArrayAsInt(dst,0);
 //
@@ -267,49 +228,17 @@ public class BTree{
 //			
 //			System.out.println("bytesRead: " + bytesRead);
 		} catch (FileNotFoundException e){
-			System.err.println("There was an error with the RandomAccessFile: " + fileName);
+			System.err.println("There was an error with the RandomAccessFile: " + filename);
 		} catch (Exception e){
-			System.err.println(e);
+			e.printStackTrace(System.err);
 		}
 		
-		
-		//TODO: adopt new reading format
-//		try {
-//			InputStream input = null;
-//			try {
-//				int totalBytesRead = bitLocation;
-//				input = new BufferedInputStream(new FileInputStream(filename));
-//
-//				while(totalBytesRead < result.length + bitLocation){
-//					int bytesRemaining = result.length - totalBytesRead;
-//					//input.read() returns -1, 0, or more :
-//					int bytesRead = input.read(result, totalBytesRead, bytesRemaining); 
-//					if (bytesRead > 0){
-//						totalBytesRead = totalBytesRead + bytesRead;
-//					}
-//				}
-//
-//				//	         the above style is a bit tricky: it places bytes into the 'result' array; 
-//				//	         'result' is an output parameter;
-//				//	         the while loop usually has a single iteration only.
-//
-//			}
-//			finally {
-//				input.close();
-//			}
-//		}
-//		catch (FileNotFoundException ex) {
-//			System.err.println("File not found.");
-//		}
-//		catch (IOException ex) {
-//			System.err.println(ex);
-//		}
-
-		//TODO: interpret buffer as Node info
+		for (int i = 0; i < result.length; i++){
+			System.out.print(result[i]);
+		}
 
 
-
-		return null;
+		return new BTreeNode(result, location);
 	}
 
 
@@ -486,15 +415,20 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-				BTree theTree = new BTree (3 ,3);
-				System.out.println();
-				theTree.insertNode(-1, 65L);
+//				BTree theTree = new BTree (3 ,3);
+//				System.out.println();
+//				theTree.insertNode(-1, 65L);
+
 
 		//		
 		//theTree;
 
 		// Testing of filename Constructor
 		BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
+		BTreeNode.TreeObject[] obj = aTree.root.objects;
+		for (int i = 0; i < obj.length; i++){
+			System.out.println(obj[i]);
+		}
 
 	}
 
@@ -509,8 +443,8 @@ public class BTree{
 
 		private int currentObjects; //number of objects in Node
 		private int parentNodeLocation; // location of parent Node
-		private int[] childNodeLocations; // array of child node locations
-		private TreeObject[] objects; // objects in node
+		public int[] childNodeLocations; // array of child node locations
+		public TreeObject[] objects; // objects in node
 		private int selfNodeLocation;
 
 
@@ -553,19 +487,45 @@ public class BTree{
 		 * 
 		 * @param array 
 		 */
-		public BTreeNode(byte[] array){
+		public BTreeNode(byte[] array, int selfLocation){
 
 			this.childNodeLocations = new int[degree + 1];
 			this.objects = new TreeObject[degree];
 			//			this.parentNodeLocation = parentLoc;
 
+//			result = concat(asByteArray(currentObjects),
+//					concat(asByteArray(parentNodeLocation),
+//							concat(concat(childNodeLocations),
+//									getObjectArrayBytes(objects))));
+			
+			this.currentObjects = byteArrayAsInt(array,0);
+			this.parentNodeLocation = byteArrayAsInt(array,32);
+			
+			int index = 0;
+			
+			for (int i = 0; i < childNodeLocations.length; i++){
+				childNodeLocations[i] = byteArrayAsInt(array,32 * index++ + 64);
+			}
+			
+			int start = 32 * index + 64;
+			
+			for (int i = 0; i < objects.length; i++){
+				objects[i] = new TreeObject(byteArrayAsLong(array, start + i * 64 + i * 32),
+											byteArrayAsInt(array, start + i * 64 + i * 32 + 32));
+			}
+			
+			this.selfNodeLocation = selfLocation;
+			
+			
+			
+			
 			//TODO 
-			this.currentObjects = 1;//FIX
+//			this.currentObjects = 1;//FIX
 			//			this.objects[0] = obj;
 
-			for (int i = 0; i < childNodeLocations.length; i++){
-				childNodeLocations[i] = -1;
-			}
+//			for (int i = 0; i < childNodeLocations.length; i++){
+//				childNodeLocations[i] = -1;
+//			}
 
 		}
 
