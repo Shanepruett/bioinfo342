@@ -19,7 +19,7 @@ import java.nio.channels.*;
  * large binary file it stores the node data in. The Nodes may be retrieved from the
  * Binary Tree using normal methods
  * 
- * @author Shane
+ * @author Shane Pruett
  *
  */
 public class BTree{
@@ -27,8 +27,10 @@ public class BTree{
 	private int nodeSize; // All Nodes have the same size based on degree of BTree
 	private final int headerSize = 128; // size of the metadata used for BTree, Always the same
 	private int sequenceLength; // the k value from handout, 3.2 Problem pg. 3, 1 - 31 
+	//TODO getSequenceLength
 	private int degree; // the degree of BTree
-	private int rootLocation; //location of root
+	//TODO getDegree
+	private int rootLocation; //location of root, TODO not necessary
 	private int numberOfNodes; 
 	private String filename; // filename of binary file
 	private FileChannel fc;
@@ -49,7 +51,7 @@ public class BTree{
 	 * @param sequenceLength how long are the sequences
 	 * @param degree the degree of the BTree
 	 */
-	public BTree(int sequenceLength, int degree){
+	public BTree(int sequenceLength, int degree){ //TODO parameter string filename
 		this.sequenceLength = sequenceLength;
 		this.degree = degree;
 
@@ -67,12 +69,12 @@ public class BTree{
 				concat(asByteArray(sequenceLength),
 						concat(asByteArray(degree),asByteArray(numberOfNodes))));
 
-		System.out.println("NodeSize = " + nodeSize + "\nHeaderSize = " + headerSize + "\nsequenceLength = " + sequenceLength);
-		System.out.println("|--nodeSize--------------------||--sequenceLength--------------||--degree----------------------||--numberofnodes---------------|");
-		System.out.println(header.length);
-		for (int i = 0; i < header.length; i++){
-			System.out.print(header[i]);
-		}
+		//		System.out.println("NodeSize = " + nodeSize + "\nHeaderSize = " + headerSize + "\nsequenceLength = " + sequenceLength);
+		//		System.out.println("|--nodeSize--------------------||--sequenceLength--------------||--degree----------------------||--numberofnodes---------------|");
+		//		System.out.println(header.length);
+		//		for (int i = 0; i < header.length; i++){
+		//			System.out.print(header[i]);
+		//		}
 
 		this.filename = "filename.gbk.btree.data." + sequenceLength + "." + degree;
 
@@ -123,24 +125,29 @@ public class BTree{
 			aFile = new RandomAccessFile(fileName, "rw");
 			fc = aFile.getChannel();
 			buf = ByteBuffer.allocate(headerSize);
-			
+
 			bytesRead = fc.read(buf, 0);
 			buf.flip();
-			
+
 			byte[] dst = new byte[headerSize];
-			
-			
+
+
 			buf.get(dst, 0, headerSize);
 
 			this.nodeSize = byteArrayAsInt(dst,0);
+			//System.out.println(this.nodeSize);
+
 
 			this.sequenceLength = byteArrayAsInt(dst,32);
+			//			System.out.println(this.sequenceLength);
 
 			this.degree = byteArrayAsInt(dst,64);
+			//			System.out.println(this.degree);
 
 			this.numberOfNodes = byteArrayAsInt(dst,96);
-			
-			System.out.println("bytesRead: " + bytesRead);
+			//			System.out.println(this.numberOfNodes);
+
+			//			System.out.println("bytesRead: " + bytesRead);
 		} catch (FileNotFoundException e){
 			System.err.println("There was an error with the RandomAccessFile: " + fileName);
 		} catch (Exception e){
@@ -149,7 +156,7 @@ public class BTree{
 
 
 		this.rootLocation = headerSize; 
-		
+
 		this.filename = fileName;
 
 		if (numberOfNodes > 0){
@@ -186,7 +193,7 @@ public class BTree{
 	 * @return root node
 	 */
 	public BTreeNode getRoot(){
-		return getNode(rootLocation);
+		return getNode(0);
 	}
 
 
@@ -198,44 +205,50 @@ public class BTree{
 	 */
 	public BTreeNode getNode(int location){
 
+		// TODO Either this is reading wrong or the BTreeNode.write() is writing incorrectly
+
 		int bitLocation = nodeLocation(location);
+//		System.out.println("IN getNode()\nLocation: " + location + "\nBitLocation: " + bitLocation);
+
 
 		byte[] result = new byte[nodeSize];
 
-//		RandomAccessFile aFile;
+
 		ByteBuffer buf;
 		int bytesRead = 0;
 
 		try{
-//			aFile = new RandomAccessFile(filename, "rw");
-			//fc = aFile.getChannel();
+
 			buf = ByteBuffer.allocate(nodeSize);
-			
+
 			bytesRead = fc.read(buf, bitLocation);
-			buf.clear();
-			
-			System.out.println(buf.remaining());
-			
+			buf.flip();
+//			System.out.println("Bytes Read: " + bytesRead);
+
+//			System.out.println("Buffer remaining: " +buf.remaining());
+
 			buf.get(result, 0, nodeSize);
 
-//			this.nodeSize = byteArrayAsInt(dst,0);
-//
-//			this.sequenceLength = byteArrayAsInt(dst,32);
-//
-//			this.degree = byteArrayAsInt(dst,64);
-//
-//			this.numberOfNodes = byteArrayAsInt(dst,96);
-//			
-//			System.out.println("bytesRead: " + bytesRead);
+
+
+			//			this.nodeSize = byteArrayAsInt(dst,0);
+			//
+			//			this.sequenceLength = byteArrayAsInt(dst,32);
+			//
+			//			this.degree = byteArrayAsInt(dst,64);
+			//
+			//			this.numberOfNodes = byteArrayAsInt(dst,96);
+			//			
+			//			System.out.println("bytesRead: " + bytesRead);
 		} catch (FileNotFoundException e){
 			System.err.println("There was an error with the RandomAccessFile: " + filename);
 		} catch (Exception e){
 			e.printStackTrace(System.err);
 		}
-		
-		for (int i = 0; i < result.length; i++){
-			System.out.print(result[i]);
-		}
+
+//		for (int i = 0; i < result.length; i++){
+//			System.out.print(result[i]);
+//		}
 
 
 		return new BTreeNode(result, location);
@@ -335,9 +348,12 @@ public class BTree{
 
 		int val = 0;
 
-		for (int i = start + 31; i >= start; i--){
+		for (int i = start + 31; i >= start + 1; i--){
 			val += arr[i] * (int)(Math.pow(2, start + 31 - i));
 		}
+		
+		if (arr[start] == 1)
+			val *= -1;
 
 		return val;
 	}
@@ -350,20 +366,24 @@ public class BTree{
 	 * @param start the start position of the long
 	 * @return and long from the binary of the array
 	 */
-	private static int byteArrayAsLong(byte[] arr, long start){
+	private static int byteArrayAsLong(byte[] arr, int start){
 
+		
 		int val = 0;
 
-		for (int i = (int) (start + 31); i >= start; i--){
+		for (int i = (start + 63); i >= start + 1; i--){
 			val += arr[i] * (int)(Math.pow(2, start + 31 - i));
 		}
 
+		if (arr[start] == 1)
+			val *= -1;
+		
 		return val;
 	}
 
 	public BTreeNode insertNode(int parent, long seq){
 
-
+		//TODO THE BIG ONE
 
 		BTreeNode newNode = new BTreeNode(parent,seq);
 		newNode.writeNode();
@@ -374,6 +394,8 @@ public class BTree{
 		return newNode;
 	}
 
+
+	// TODO NOT NECESSARY
 	public byte[] fileToByte(){
 
 		return null;
@@ -415,20 +437,26 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-//				BTree theTree = new BTree (3 ,3);
-//				System.out.println();
-//				theTree.insertNode(-1, 65L);
+		BTree theTree = new BTree (3 ,3);
+		System.out.println();
+		theTree.insertNode(-1, 63L);
+
+		BTreeNode.TreeObject[] obj = theTree.root.objects;
+		for (int i = 0; i < obj.length; i++){
+			System.out.println(obj[i]);
+		}
 
 
 		//		
 		//theTree;
 
 		// Testing of filename Constructor
-		BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
-		BTreeNode.TreeObject[] obj = aTree.root.objects;
-		for (int i = 0; i < obj.length; i++){
-			System.out.println(obj[i]);
-		}
+				BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
+				System.out.println();
+				BTreeNode.TreeObject[] obj2 = aTree.root.objects;
+				for (int i = 0; i < obj2.length; i++){
+					System.out.println(obj2[i]);
+				}
 
 	}
 
@@ -450,12 +478,14 @@ public class BTree{
 
 
 		/**
-		 * Constructor for new Node given the sequence as a long
+		 * Constructor for new Node given the sequence as a long, only for new heads
 		 * 
 		 * @param parentLoc 
 		 * @param seq long representing a sequence
 		 */
 		public BTreeNode(int parentLoc, long seq){
+
+			//TODO only for new Heads
 
 			//initialize arrays
 			this.childNodeLocations = new int[degree + 1];
@@ -488,44 +518,48 @@ public class BTree{
 		 * @param array 
 		 */
 		public BTreeNode(byte[] array, int selfLocation){
-
+			
+			System.out.println("\nInside BTreeNode Constructor");
+			
 			this.childNodeLocations = new int[degree + 1];
 			this.objects = new TreeObject[degree];
 			//			this.parentNodeLocation = parentLoc;
 
-//			result = concat(asByteArray(currentObjects),
-//					concat(asByteArray(parentNodeLocation),
-//							concat(concat(childNodeLocations),
-//									getObjectArrayBytes(objects))));
-			
+			//			result = concat(asByteArray(currentObjects),
+			//					concat(asByteArray(parentNodeLocation),
+			//							concat(concat(childNodeLocations),
+			//									getObjectArrayBytes(objects))));
+
 			this.currentObjects = byteArrayAsInt(array,0);
+//			System.out.println("currentObjects: " + currentObjects);
+			
 			this.parentNodeLocation = byteArrayAsInt(array,32);
+//			System.out.println("parentNodeLocation: " + parentNodeLocation);
+			
 			
 			int index = 0;
-			
+
 			for (int i = 0; i < childNodeLocations.length; i++){
 				childNodeLocations[i] = byteArrayAsInt(array,32 * index++ + 64);
+//				System.out.println("Child node location " + i + ": " + childNodeLocations[i]);
 			}
-			
+
 			int start = 32 * index + 64;
+
 			
 			for (int i = 0; i < objects.length; i++){
 				objects[i] = new TreeObject(byteArrayAsLong(array, start + i * 64 + i * 32),
-											byteArrayAsInt(array, start + i * 64 + i * 32 + 32));
+						byteArrayAsInt(array, start + i * 64 + i * 32 + 32));
+				System.out.println("BTreeObject " + i + ": " + objects[i]);
 			}
-			
-			this.selfNodeLocation = selfLocation;
-			
-			
-			
-			
-			//TODO 
-//			this.currentObjects = 1;//FIX
-			//			this.objects[0] = obj;
 
-//			for (int i = 0; i < childNodeLocations.length; i++){
-//				childNodeLocations[i] = -1;
-//			}
+			this.selfNodeLocation = selfLocation;
+
+
+
+
+			//TODO 
+
 
 		}
 
@@ -537,15 +571,16 @@ public class BTree{
 		 */
 		private byte[] getObjectArrayBytes(TreeObject[] objs){
 
-			if (objs.length == 1)
+			if (objs.length == 1){
 				return objs[0] == null? getNullByteCode() : objs[0].getByteCode();
+			}
 
-				TreeObject[] end = new TreeObject[objs.length -1];
+			TreeObject[] end = new TreeObject[objs.length -1];
 
-				for (int i = 0; i < end.length; i++)
-					end[i] = objs[i+1];
+			for (int i = 0; i < end.length; i++)
+				end[i] = objs[i+1];
 
-				return concat(objs[0] == null? getNullByteCode() : objs[0].getByteCode(), getObjectArrayBytes(end));
+			return concat(objs[0] == null? getNullByteCode() : objs[0].getByteCode(), getObjectArrayBytes(end));
 		}
 
 		/**
@@ -569,7 +604,7 @@ public class BTree{
 					concat(asByteArray(parentNodeLocation),
 							concat(concat(childNodeLocations),
 									getObjectArrayBytes(objects))));
-
+//			System.out.println("inside writeNode\nresult length: " + result.length);
 			//			try {
 			//				OutputStream output = null;
 			//				try {
@@ -606,7 +641,6 @@ public class BTree{
 			try {
 				System.out.println(fc.size());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -620,7 +654,7 @@ public class BTree{
 		 */
 		public class TreeObject implements Comparable{
 
-			
+
 
 			@Override
 			public boolean equals(Object obj) {
@@ -778,18 +812,23 @@ public class BTree{
 			 */
 			public String getSequenceString(){
 				byte[] arr = asByteArray(sequence);
+				
+				if (arr[0] == 1){
+					return "nil";
+				}
+				
 				String result = "";
 
 				for (int i = arr.length - 2 * sequenceLength; i < arr.length; i = i + 2){
 
-					if (arr[i-1] == 0){
-						if (arr[i] == 0)
+					if (arr[i] == 0){
+						if (arr[i+1] == 0)
 							result += "A";
 						else 
 							result += "C";
 					}
 					else {
-						if (arr[i] == 0)
+						if (arr[i+1] == 0)
 							result += "G";
 						else
 							result += "T";
@@ -801,7 +840,7 @@ public class BTree{
 
 			@Override
 			public String toString() {
-				return "" + frequency + " " + getSequenceString();
+				return "freq:" + frequency + " seq: " + getSequenceString();
 			}
 
 			private BTreeNode getOuterType() {
