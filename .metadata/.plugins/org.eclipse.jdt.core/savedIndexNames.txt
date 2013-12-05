@@ -1,0 +1,14 @@
+INDEX VERSION 1.126+/home/students/spruett/bioinfo342/.metadata/.plugins/org.eclipse.jdt.core
+4083333916.index
+2033505644.index
+1624416407.index
+1598698128.index
+4101535989.index
+362229473.index
+323277520.index
+2265555482.index
+2723866741.index
+2543514816.index
+651071758.index
+3019065743.index
+287760511.index
