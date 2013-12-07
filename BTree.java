@@ -524,16 +524,30 @@ public class BTree{
 
 	public void printBTree(){
 		
-		System.out.println("ROOT: " + root);
+		String s ="";
+		for (BTreeNode.TreeObject b : root.objects){
+			s+= b.getSequenceString() + " v:" + b.sequence + " ";
+		}
+		
+		
+		System.out.println("ROOT: " + s);
 		printChildNodes(root.childNodeLocations, 1);
 		
 	}
 	
 	private void printChildNodes(ArrayList<Integer> children, int tabs){
 		
+		String s = "";
+		
 		for (int i : children){
 			BTreeNode b = getNode(i);
-			System.out.println("[DEPTH=" + (tabs)+ "] " + b);
+			for (BTreeNode.TreeObject t : b.objects){
+				s += t.getSequenceString() + " v:" + t.sequence + " ";
+			}
+			
+			
+			
+			System.out.println("[DEPTH=" + tabs + "] " + s);
 			printChildNodes(b.childNodeLocations, tabs + 1);
 		}
 		
