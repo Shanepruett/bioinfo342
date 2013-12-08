@@ -1,11 +1,3 @@
-/**
- * @author:
- * @class:
- * @assignment:
- * 
- * @description:
- */
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,24 +6,17 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 
-
-
-public class GeneBankCreateBTree{
-	public static int debugLevel, cacheSize;
+public class GeneBankCreateBTree {
+	public static int debugLevel, cacheSize, degree, seqLength;
 	public static boolean useCache;
-	public static String file, query;
-
-	@SuppressWarnings("unused")
+	public static String gbk;
+	
 	private static void readArgs(String[] args) throws IllegalArgumentException {
-		
-		/* Cache size and debug level are ignored, debug level set to default: 0 */
-		if(args.length == 3) 
+		if(args.length == 4)
 			debugLevel = 0;
-		/* Cache size provided. Debug level ignored, debug level set to default: 0 */
-		else if(args.length == 4) {
-			/* Cache size */
-			try {
-				cacheSize = Integer.parseInt(args[3]);
+		else if(args.length == 5) {
+			try{
+				cacheSize = Integer.parseInt(args[4]);
 			}
 			catch(NumberFormatException e) {
 				throw new IllegalArgumentException("Please enter cache size as an int value");
@@ -39,97 +24,121 @@ public class GeneBankCreateBTree{
 			debugLevel = 0;
 		}
 		
-		/* Cache size and debug level are provided */
-		else if(args.length == 5) {
-			/* Cache size */
+		else if(args.length == 6) {
 			try {
-				cacheSize = Integer.parseInt(args[3]);
+				cacheSize = Integer.parseInt(args[4]);
 			}
 			catch(NumberFormatException e) {
 				throw new IllegalArgumentException("Please enter cache size as an int value");
-			}
-			/* Debug level */
-			try{
-				debugLevel = Integer.parseInt(args[4]);
-			}
-			catch (NumberFormatException e){
-				throw new IllegalArgumentException("Please enter debug level as an int value: 0 or 1");
 			}
 			if(debugLevel != 0 && debugLevel != 1)
 				throw new IllegalArgumentException("Debug level must be either 0 or 1");
 		}
-		
-		/* Catch error in number of arguments provided */
 		else
 			throw new IllegalArgumentException("Expected arguments: \n " +
 					"java GeneBankSearch <0/1(no/withCache)>" +
-					"<btree file> <query file> [<cache size>]" +
+					"<degree> <gbk file> <sequence length> [<cache size>]" +
 					"[<debug level>]");
 		
-		/* args[0] determines whether or not cache is used */
 		if(args[0] == "0")
 			useCache = false;
 		else if(args[0] == "1")
 			useCache = true;
 		else
 			throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
-		
-		/* File name */
-		file = args[1];
-		
-		/* Query file */
-		query = args[2];
+		if(args[1] == "0")
+			//TODO : figure this out;
+		try {
+			degree = Integer.parseInt(args[1]);
+		}
+		catch(NumberFormatException e) {
+			throw new IllegalArgumentException("Please enter degree as an int value");
+		}
+		gbk = args[2];
+		if(seqLength < 1 || seqLength > 31)
+			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
+		seqLength = Integer.parseInt(args[3]);
 	}
-	
+	/**
+	 * @param args
+	 * @throws IOException 
+	 */
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws IOException {
+		String line, sequence = null, range;
+		long value, start = System.currentTimeMillis();
+		char x;
+		boolean readIn = false;
 		
-		
-		String nextLine;
-		char value;
-		long sequence = 0;
-		FileInputStream queryFile;
-		
-		try {
-			queryFile = new FileInputStream(query);
-		}
-		catch(FileNotFoundException e) {
-			throw new FileNotFoundException("File provided not found");
-		}
-		BufferedReader queryReader = new BufferedReader(new InputStreamReader(queryFile, Charset.forName("UTF-8")));
-		
-		try {
-			while((nextLine = queryReader.readLine()) != null) {
-				nextLine = nextLine.replaceAll("\\s", "");
-				nextLine = nextLine.toLowerCase();
+		readArgs(args);
+		FileInputStream input;
 				
-				if(!nextLine.contains("n")) {
-					if(nextLine.matches("^[actg]+$"))
-						for(int i = 0; i < nextLine.length(); i++) {
-							value = nextLine.charAt(i);
-							if(value == 'a')
-								sequence = sequence * 4 + 0b00;
-							else if(value == 'c')
-								sequence = sequence * 4 + 0b01;
-							else if(value == 't')
-								sequence = sequence * 4 + 0b11;
-							else if(value == 'g')
-								sequence = sequence * 4 + 0b10;
-						}
-				}
-				else throw new IOException("File provided is formatted incorrectly.");
-			}
+		try {
+			input = new FileInputStream(gbk);
+		} 
+		catch (FileNotFoundException e) {
+			throw new FileNotFoundException("File " + gbk + " could not be found");
 		}
+		
+		BufferedReader read = new BufferedReader(new InputStreamReader(input, Charset.forName("UTF-8")));
+		
+		try {
+			BTree tree = new BTree(gbk, seqLength, degree, useCache, cacheSize);
+			line = read.readLine();
+			while(line != null) {
+				line = line.toLowerCase();
+				line = line.replaceAll("\\s","");
+				if(line.equals("origin")){
+					sequence = "";
+					readIn = true;
+					continue;
+				}
+				if(line.equals("//")) {
+					readIn = false;
+					int i = 0;
+					while(i+seqLength <= sequence.length()) {
+						value = 0;
+						range = sequence.substring(i, i+seqLength);
+						if(!range.contains("n")) {
+							if(range.matches("^[actg]+$")) {
+								for(int j = 0; j < range.length(); j ++){
+									x = range.charAt(j) ;
+									if(x == 'a')
+										value = value * 4 + 0b00;
+									else if(x == 'c')
+										value = value * 4 + 0b01;
+									else if(x == 'g')
+										value = value * 4 + 0b10;
+									else if(x == 't')
+										value = value * 4 + 0b11;
+								}
+							}
+							else
+								throw new IOException(gbk + "is not properly formatted");
+						}
+						i++;
+					}
+					continue;
+				}
+				if(readIn) {
+					line = line.replaceAll("[0-9]", "");
+					sequence = sequence + line;
+				}
+			}
+		}	
 		catch(IOException e) {
 			try {
-				queryFile.close();
+				input.close();
 			}
-			catch(IOException f) {
-				f.printStackTrace();
+			catch(IOException ea) {
+				ea.printStackTrace();	
 			}
-			throw new IOException("File is not working properly. Please check that file" +
-					"exists and is properly formatted.");
+			throw new IOException(gbk + " not accessible or not formatted properly");
+		}
+		
+		if(debugLevel == 2) {
+			long time = System.currentTimeMillis()-start;
+			System.out.println("Total time: " + time);
 		}
 	}
 }
-		
