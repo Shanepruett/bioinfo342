@@ -1,9 +1,12 @@
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.io.File;
 
 
 public class GeneBankCreateBTree {
@@ -40,10 +43,11 @@ public class GeneBankCreateBTree {
 					"<degree> <gbk file> <sequence length> [<cache size>]" +
 					"[<debug level>]");
 		
-		if(args[0] == "0")
+		if(Integer.parseInt(args[0]) == 0)
 			useCache = false;
-		else if(args[0] == "1")
+		else if(Integer.parseInt(args[0]) == 1) {
 			useCache = true;
+		}
 		else
 			throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
 		if(args[1] == "0")
@@ -55,9 +59,9 @@ public class GeneBankCreateBTree {
 			throw new IllegalArgumentException("Please enter degree as an int value");
 		}
 		gbk = args[2];
+		seqLength = Integer.parseInt(args[3]);
 		if(seqLength < 1 || seqLength > 31)
 			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
-		seqLength = Integer.parseInt(args[3]);
 	}
 	/**
 	 * @param args
@@ -65,38 +69,42 @@ public class GeneBankCreateBTree {
 	 */
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws IOException {
-		String line, sequence = null, range;
+		String line = null, sequence = null, range;
 		long value, start = System.currentTimeMillis();
 		char x;
 		boolean readIn = false;
 		
 		readArgs(args);
-		FileInputStream input;
+		File input;
 				
-		try {
-			input = new FileInputStream(gbk);
+		input = new File(gbk);
+		/*try {
+			input = new File(gbk);
 		} 
 		catch (FileNotFoundException e) {
 			throw new FileNotFoundException("File " + gbk + " could not be found");
-		}
+		}*/
 		
-		BufferedReader read = new BufferedReader(new InputStreamReader(input, Charset.forName("UTF-8")));
+		BufferedReader read = new BufferedReader(new FileReader(input/*, Charset.forName("UTF-8")*/));
 		
 		try {
-			BTree tree = new BTree(gbk, seqLength, degree, useCache, cacheSize);
+			BTree tree = new BTree(seqLength, degree, gbk);
 			line = read.readLine();
 			while(line != null) {
+			System.out.println("inside While");
 				line = line.toLowerCase();
-				line = line.replaceAll("\\s","");
+//				line = line.replaceAll("\\s","");
 				if(line.equals("origin")){
 					sequence = "";
 					readIn = true;
-					continue;
+					//continue;
 				}
 				if(line.equals("//")) {
+					System.out.println(sequence);
 					readIn = false;
 					int i = 0;
 					while(i+seqLength <= sequence.length()) {
+						
 						value = 0;
 						range = sequence.substring(i, i+seqLength);
 						if(!range.contains("n")) {
@@ -121,20 +129,24 @@ public class GeneBankCreateBTree {
 					continue;
 				}
 				if(readIn) {
-					line = line.replaceAll("[0-9]", "");
+					line = line.replaceAll("[0-9] ", "");
 					sequence = sequence + line;
 				}
+				line = read.readLine();
 			}
 		}	
 		catch(IOException e) {
+			throw new IOException(gbk + " not accessible or not formatted properly");
+		}
 			try {
-				input.close();
+				read.close();
+				System.out.println("Closing");
 			}
 			catch(IOException ea) {
 				ea.printStackTrace();	
 			}
-			throw new IOException(gbk + " not accessible or not formatted properly");
-		}
+			
+	
 		
 		if(debugLevel == 2) {
 			long time = System.currentTimeMillis()-start;

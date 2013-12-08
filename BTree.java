@@ -46,7 +46,7 @@ public class BTree{
 		this.degree = degree;
 
 		if (this.sequenceLength > 31){
-			System.err.println("Sequence length is to large, you entered: " + this.sequenceLength);
+			System.err.println("Sequence length is too large, you entered: " + this.sequenceLength);
 			System.exit(1);
 		}
 
@@ -550,14 +550,14 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-		BTree theTree = new BTree (12 ,4, "filename");
+	/*	BTree theTree = new BTree (0, 4, "filename", 12);
 		System.out.println();
 		for (int i = 1; i < 2024; i++){
 			//			System.out.println("Adding " + i  + "L");
 			theTree.insertNode((long)(i % 1000));
 		}
 		theTree.printBTree();
-		System.out.println("numberOfNode: " +theTree.numberOfNodes);
+		System.out.println("numberOfNode: " +theTree.numberOfNodes); */
 
 
 
