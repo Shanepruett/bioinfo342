@@ -26,7 +26,6 @@ public class BTree{
 	private final int headerSize = 128; // size of the metadata used for BTree, Always the same
 	private int sequenceLength; // the k value from handout, 3.2 Problem pg. 3, 1 - 31 
 	private int degree; // the degree of BTree
-	//private int rootLocation; //location of root, TODO not necessary
 	private int numberOfNodes; 
 	private String filename; // filename of binary file
 	private FileChannel fc;
@@ -42,7 +41,7 @@ public class BTree{
 	 * @param sequenceLength how long are the sequences
 	 * @param degree the degree of the BTree
 	 */
-	public BTree(int sequenceLength, int degree, String filename){ //TODO parameter string filename
+	public BTree(int sequenceLength, int degree, String filename){
 		this.sequenceLength = sequenceLength;
 		this.degree = degree;
 
@@ -50,8 +49,6 @@ public class BTree{
 			System.err.println("Sequence length is to large, you entered: " + this.sequenceLength);
 			System.exit(1);
 		}
-			
-		
 
 		// Metadata size (32) + Pointer size (32) * (Parent loc + Degree * 2) + (Degree *2 - 1)* Object Size        
 		this.nodeSize = 32 + 32 * (degree * 2 + 1) + 96 * (degree * 2 - 1);
@@ -91,14 +88,15 @@ public class BTree{
 
 		RandomAccessFile aFile;
 		ByteBuffer buf;
-		int bytesRead = 0;
+		//int bytesRead = 0;
 
 		try{
 			aFile = new RandomAccessFile(fileName, "rw");
 			fc = aFile.getChannel();
 			buf = ByteBuffer.allocate(headerSize);
 
-			bytesRead = fc.read(buf, 0);
+			//bytesRead = 
+			fc.read(buf, 0);
 			buf.flip();
 
 			byte[] dst = new byte[headerSize];
@@ -152,7 +150,7 @@ public class BTree{
 	 * 
 	 * @return root node
 	 */
-	public BTreeNode getRoot(int location){
+	private BTreeNode getRoot(int location){
 		
 	
 		
@@ -180,11 +178,12 @@ public class BTree{
 		byte[] result = new byte[nodeSize];
 
 		ByteBuffer buf;
-		int bytesRead = 0;
+		//int bytesRead = 0;
 
 		try{
 			buf = ByteBuffer.allocate(nodeSize);
-			bytesRead = fc.read(buf, bitLocation);
+			//bytesRead = 
+			fc.read(buf, bitLocation);
 			buf.flip();
 			buf.get(result, 0, nodeSize);
 
@@ -328,10 +327,18 @@ public class BTree{
 		return val;
 	}
 
+	/**
+	 * This is the main insert method of BTree, it will split the root if it needs split and use
+	 * the insertNonFull() method to insert the sequence
+	 * 
+	 * @param kSeq long representation of the sequence
+	 */
 	public void insertNode(long kSeq){
 
 		BTreeNode theRoot = root;
 		//		System.out.println("Compare Root: " + theRoot.objects.size() + " ? " + theRoot.currentObjects);
+		
+		// Just in case the root needs split
 		if (theRoot.currentObjects == (degree * 2 - 1)){
 
 			BTreeNode s = new BTreeNode(-1);
@@ -349,7 +356,13 @@ public class BTree{
 
 	}
 
-	public void splitChild(BTreeNode xParent, int iXChild){
+	/**
+	 * This method splits the child node if it is full
+	 * 
+	 * @param xParent
+	 * @param iXChild
+	 */
+	private void splitChild(BTreeNode xParent, int iXChild){
 
 		// To be the Right Child after Split
 		BTreeNode zRightChild = new BTreeNode(xParent.selfNodeLocation);
@@ -390,6 +403,12 @@ public class BTree{
 
 	}
 
+	/**
+	 * This method inserts a sequence in to a nonfull node
+	 * 
+	 * @param xNode
+	 * @param kSeq
+	 */
 	private void insertNonFull(BTreeNode xNode, long kSeq){
 		int i = xNode.currentObjects;
 
@@ -443,6 +462,9 @@ public class BTree{
 
 	}
 
+	/**
+	 * This method prints some debugging info to the konsole
+	 */
 	public void printBTree(){
 
 		String s ="";
@@ -456,6 +478,12 @@ public class BTree{
 
 	}
 
+	/**
+	 * recursively prints the child nodes
+	 * 
+	 * @param children
+	 * @param tabs
+	 */
 	private void printChildNodes(ArrayList<Integer> children, int tabs){
 
 		String s = "";
@@ -483,7 +511,6 @@ public class BTree{
 
 	@Override
 	public String toString() {
-
 		return "BTree [root=" + root + "]" ;
 	}
 
@@ -541,13 +568,12 @@ public class BTree{
 
 	}
 
-
-
-
-
-
-
-
+	/**
+	 * This inner class is the Nodes used to store sequences
+	 * 
+	 * @author spruett
+	 *
+	 */
 	public class BTreeNode{
 
 		public int currentObjects; //number of objects in Node
@@ -557,39 +583,7 @@ public class BTree{
 		public ArrayList<Integer> childNodeLocations;
 		public ArrayList<TreeObject> objects;
 
-		public int selfNodeLocation;
-
-
-
-		//		/**
-		//		 * Constructor for new Node given the sequence as a long, only for first head? 
-		//		 * This might not get used.
-		//		 * 
-		//		 * @param parentLoc 
-		//		 * @param seq long representing a sequence
-		//		 */
-		//		public BTreeNode(long seq){
-		//
-		//			//TODO only for new Heads
-		//
-		//			childNodeLocations = new ArrayList<Integer>();
-		//			objects = new ArrayList<TreeObject>();
-		//
-		//			//parent location, always the head
-		//			this.parentNodeLocation = -1;
-		//
-		//			// new node, so only one object
-		//			this.currentObjects = 1;
-		//			objects.add(new TreeObject(seq));
-		//
-		//			// this nodes location, used for writing
-		//			this.selfNodeLocation = numberOfNodes++;
-		//
-		//			for (TreeObject t : objects){
-		//				System.out.println(t);
-		//			}
-		//
-		//		}
+		private int selfNodeLocation;
 
 		/**
 		 * Create an empty Node
@@ -604,6 +598,7 @@ public class BTree{
 			this.currentObjects = 0;
 			this.parentNodeLocation = parentNode;
 
+			// This new node has a location equal to the number of nodes now in the tree
 			this.selfNodeLocation = numberOfNodes++;
 
 
@@ -623,7 +618,6 @@ public class BTree{
 			this.parentNodeLocation = byteArrayAsInt(array,32);
 
 			int index = 0;
-
 
 			// Read the child Locations
 			for (int i = 0; i < (degree * 2); i++){
@@ -661,7 +655,7 @@ public class BTree{
 		}
 
 		/**
-		 * Recursively get byte array representation of objects
+		 * Get byte array representation of objects
 		 * 
 		 * @param objs
 		 * @return
@@ -694,9 +688,7 @@ public class BTree{
 
 
 		/**
-		 * 
 		 * This method writes the Node to the bin file
-		 * 
 		 */
 		public void writeNode(){
 
@@ -708,8 +700,10 @@ public class BTree{
 							concat(concatLocations(childNodeLocations),
 									getObjectArrayBytes(objects))));
 			try {
+				// Update number of nodes in BTree
 				fc.position(96);
 				fc.write(ByteBuffer.wrap(asByteArray(numberOfNodes)));
+				// Update Node info in bin
 				fc.position(bitLocation);
 				fc.write(ByteBuffer.wrap(result));
 			} catch (IOException e) {
@@ -749,8 +743,6 @@ public class BTree{
 		 *
 		 */
 		public class TreeObject{
-
-
 
 			@Override
 			public boolean equals(Object obj) {
@@ -837,7 +829,7 @@ public class BTree{
 			 * @param seq string representation of the sequence
 			 * @return long representation of sequence
 			 */
-			private long convertSeq(String seq){
+			public long convertSeq(String seq){
 
 				seq.toUpperCase();
 
@@ -874,7 +866,7 @@ public class BTree{
 			}
 
 			/**
-			 * increment the frequency
+			 * increment the frequency, not really needed
 			 */
 			public void incrementFreq(){
 				this.frequency++;
