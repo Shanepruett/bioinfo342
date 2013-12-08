@@ -46,7 +46,7 @@ public class BTree{
 	 * @param sequenceLength how long are the sequences
 	 * @param degree the degree of the BTree
 	 */
-	public BTree(int sequenceLength, int degree){ //TODO parameter string filename
+	public BTree(int sequenceLength, int degree, String filename){ //TODO parameter string filename
 		this.sequenceLength = sequenceLength;
 		this.degree = degree;
 
@@ -71,7 +71,7 @@ public class BTree{
 		//			System.out.print(header[i]);
 		//		}
 
-		this.filename = "filename.gbk.btree.data." + sequenceLength + "." + degree;
+		this.filename = filename + ".gbk.btree.data." + sequenceLength + "." + degree;
 
 
 		RandomAccessFile aFile;
@@ -86,23 +86,6 @@ public class BTree{
 
 		this.root = new BTreeNode(-1);
 		this.root.leaf = true;
-
-		//		try {
-		//			OutputStream output = null;
-		//			try {
-		//				output = new BufferedOutputStream(new FileOutputStream(filename));
-		//				output.write(header);
-		//			}
-		//			finally {
-		//				output.close();
-		//			}
-		//		}
-		//		catch(FileNotFoundException ex){
-		//			System.err.println(ex);
-		//		}
-		//		catch(IOException ex){
-		//			System.err.println(ex);
-		//		}
 
 
 	}
@@ -156,8 +139,11 @@ public class BTree{
 		this.filename = fileName;
 
 		if (numberOfNodes > 0){
-			this.root = getRoot();
+			this.root = getRoot(0);
+//			System.out.println(root);
 		}
+		
+		
 
 		System.out.print("seqL = " + this.sequenceLength + "\n" +
 				"degree = " + this.degree + "\n" +
@@ -188,8 +174,16 @@ public class BTree{
 	 * 
 	 * @return root node
 	 */
-	public BTreeNode getRoot(){
-		return getNode(0);
+	public BTreeNode getRoot(int location){
+		
+	
+		
+		BTreeNode node = getNode(location);
+		
+		if (node.parentNodeLocation == -1)
+			return node;
+		
+		return getRoot(node.parentNodeLocation);
 	}
 
 
@@ -204,7 +198,7 @@ public class BTree{
 
 
 		int bitLocation = nodeLocation(location);
-		//		System.out.println("IN getNode()\nLocation: " + location + "\nBitLocation: " + bitLocation);
+//		System.out.println("IN getNode()\nLocation: " + location + "\nBitLocation: " + bitLocation + " nodeSize:" + nodeSize);
 
 
 		byte[] result = new byte[nodeSize];
@@ -227,9 +221,9 @@ public class BTree{
 			e.printStackTrace(System.err);
 		}
 
-		//		for (int i = 0; i < result.length; i++){
-		//			System.out.print(result[i]);
-		//		}
+//				for (int i = 0; i < result.length; i++){
+//					System.out.print(result[i]);
+//				}
 
 
 		return new BTreeNode(result, location);
@@ -262,8 +256,8 @@ public class BTree{
 
 		int numObjects = 0;
 		byte[] currArray = new byte[0];
-		
-//		System.out.println("inside concatLocations, array size:" + array.size());
+
+		//		System.out.println("inside concatLocations, array size:" + array.size());
 		while (numObjects < (degree * 2)){
 			//			System.out.println(numObjects);
 			if (array.size() <= numObjects)
@@ -272,7 +266,7 @@ public class BTree{
 				currArray = concat(currArray, asByteArray(array.get(numObjects)));
 			}
 			numObjects++;
-			
+
 			//			System.out.println(numObjects);
 		}
 
@@ -353,8 +347,8 @@ public class BTree{
 		if (arr[start] == 1)
 			val *= -1;
 
-		
-//		System.out.println("Starting from " + start + ": " + val);
+
+		//		System.out.println("Starting from " + start + ": " + val);
 		return val;
 	}
 
@@ -390,7 +384,7 @@ public class BTree{
 
 
 		BTreeNode theRoot = root;
-//		System.out.println("Compare Root: " + theRoot.objects.size() + " ? " + theRoot.currentObjects);
+		//		System.out.println("Compare Root: " + theRoot.objects.size() + " ? " + theRoot.currentObjects);
 		if (theRoot.currentObjects == (degree * 2 - 1)){
 
 			BTreeNode s = new BTreeNode(-1);
@@ -398,10 +392,10 @@ public class BTree{
 			s.leaf = false;
 			s.currentObjects = 0;
 			s.childNodeLocations.add(theRoot.selfNodeLocation);
-//			System.out.println("Inside insertNode :" + s.childNodeLocations.size());
+			//			System.out.println("Inside insertNode :" + s.childNodeLocations.size());
 			splitChild(s,1);
 			insertNonFull(s,kSeq);
-//			System.out.println("Inside insertNode :" + s.childNodeLocations.size());
+			//			System.out.println("Inside insertNode :" + s.childNodeLocations.size());
 		}
 		else {
 			insertNonFull(theRoot,kSeq);
@@ -411,37 +405,37 @@ public class BTree{
 	}
 
 	public void splitChild(BTreeNode xParent, int iXChild){
-//		System.out.println("Inside splitChild: " + iXChild);
-//		System.out.println("x's count: " + xParent.currentObjects);
+		//		System.out.println("Inside splitChild: " + iXChild);
+		//		System.out.println("x's count: " + xParent.currentObjects);
 
-		
-		
+
+
 		// To be the Right Child after Split
 		BTreeNode zRightChild = new BTreeNode(xParent.selfNodeLocation);
 		// To be the Left Child after Split
 		BTreeNode yLeftChild = getNode(xParent.childNodeLocations.get(iXChild-1));
 		yLeftChild.parentNodeLocation = xParent.selfNodeLocation;
 
-		
+
 		zRightChild.leaf = yLeftChild.leaf;
-		
-//		System.out.println(xParent);
-//		System.out.println(yLeftChild);
-//		System.out.println(zRightChild);
-		
-//		System.out.println("Is right child a leaf? " + zRightChild.leaf);
+
+		//		System.out.println(xParent);
+		//		System.out.println(yLeftChild);
+		//		System.out.println(zRightChild);
+
+		//		System.out.println("Is right child a leaf? " + zRightChild.leaf);
 		zRightChild.currentObjects = degree - 1;
 
 		for (int i = 1; i < degree ; i++){
-//			System.out.println("There are " + yLeftChild.objects.size() + " objects in left Before");
+			//			System.out.println("There are " + yLeftChild.objects.size() + " objects in left Before");
 			zRightChild.objects.add(yLeftChild.objects.remove(degree));
-//			System.out.println("There are " + yLeftChild.objects.size() + " objects in left After");
+			//			System.out.println("There are " + yLeftChild.objects.size() + " objects in left After");
 		}
 
 		if (!yLeftChild.leaf){
 			for (int i = 1; i <= degree; i++){
 				zRightChild.childNodeLocations.add(yLeftChild.childNodeLocations.remove(degree));
-//				System.out.println("z#child: " + zRightChild.childNodeLocations.size() + "  y#child: " + yLeftChild.childNodeLocations.size());
+				//				System.out.println("z#child: " + zRightChild.childNodeLocations.size() + "  y#child: " + yLeftChild.childNodeLocations.size());
 			}
 		}
 
@@ -453,7 +447,7 @@ public class BTree{
 		//		}
 
 		xParent.childNodeLocations.add(iXChild, zRightChild.selfNodeLocation );
-//		System.out.println("Inside splitChild #children: " + xParent.childNodeLocations.size() + " atIndex: " + iXChild);
+		//		System.out.println("Inside splitChild #children: " + xParent.childNodeLocations.size() + " atIndex: " + iXChild);
 
 		//Skipping part of pseudo code because of ArrayList implementation
 		xParent.objects.add(iXChild - 1, yLeftChild.objects.remove(degree-1));
@@ -475,41 +469,45 @@ public class BTree{
 
 			while (i >= 1 && kSeq <= xNode.objects.get(i-1).sequence){
 				if (kSeq == xNode.objects.get(i-1).sequence){
-					System.out.println("A value was equal");
+//					System.out.println("A value was equal");
 					xNode.objects.get(i-1).frequency++;
-					break;
+//					System.out.println("A value was equal <" + xNode.objects.get(i-1));
+					xNode.writeNode();
+					return;
 				}
+
 				//				System.out.println("inside loop: " + i);
 				i--;
 			}
 			//			if (xNode.objects.size() != 0) System.out.println("compare values kSeq:" + kSeq + "  seq:" + xNode.objects.get(0).sequence);
-
+			if ( i >= 1 && kSeq == xNode.objects.get(i-1).sequence) System.err.println("ERROR INSIDE INSERTNONFUKK");
 
 			//			System.out.println(kSeq);
 			//xNode.addTreeObject(i, kSeq);
 			xNode.objects.add(i,xNode.getTreeObject(kSeq));
 			xNode.currentObjects++;
-			System.out.println("right after add objectsSize: " + xNode.objects.size() + "  currObj: " + xNode.currentObjects);
-			
-			
+//			System.out.println("right after add objectsSize: " + xNode.objects.size() + "  currObj: " + xNode.currentObjects);
+
+
 			xNode.writeNode();
 
 		}
 		else {
 			while(i >= 1 && kSeq <= xNode.objects.get(i-1).sequence){
 				if (kSeq == xNode.objects.get(i-1).sequence){
-					System.out.println("A value was equal");
+					
 					xNode.objects.get(i-1).frequency++;
-					break;
+//					System.out.println("A value was equal <" + xNode.objects.get(i-1));
+					xNode.writeNode();
+					return;
 				}
 				i--;
 			}
 			i++;
 
-//			System.out.println("in insertNonFull size of childLocations: " + xNode.childNodeLocations.size());
-//			System.out.println(xNode);
-			
-			// TODO HERE LIES A PROBLEM
+			//			System.out.println("in insertNonFull size of childLocations: " + xNode.childNodeLocations.size());
+			//			System.out.println(xNode);
+
 			BTreeNode child = getNode(xNode.childNodeLocations.get(i-1));
 			if (child.currentObjects == (degree * 2 - 1)){
 				splitChild(xNode,i);
@@ -523,42 +521,46 @@ public class BTree{
 	}
 
 	public void printBTree(){
-		
+
 		String s ="";
 		for (BTreeNode.TreeObject b : root.objects){
 			s+= b.getSequenceString() + " v:" + b.sequence + " ";
 		}
-		
-		
+
+
 		System.out.println("ROOT: " + s);
 		printChildNodes(root.childNodeLocations, 1);
-		
+
 	}
-	
+
 	private void printChildNodes(ArrayList<Integer> children, int tabs){
-		
+
 		String s = "";
-		
+
 		for (int i : children){
+			if (i != -1){
 			BTreeNode b = getNode(i);
+
 			for (BTreeNode.TreeObject t : b.objects){
-				s += t.getSequenceString() + " v:" + t.sequence + " ";
+				s += " [<" + t.getSequenceString() + "=:=" + t.sequence + ">#" + t.frequency +"] ";
 			}
-			
-			
-			
-			System.out.println("[DEPTH=" + tabs + "] " + s);
 			printChildNodes(b.childNodeLocations, tabs + 1);
+			}
 		}
-		
-		
-		
+
+		if (s.length() != 0)
+			System.out.println("[DEPTH=" + tabs + "] " + s);
+
+
+
+
+
 	}
 
 
 	@Override
 	public String toString() {
-		
+
 		return "BTree [root=" + root + "]" ;
 	}
 
@@ -598,48 +600,21 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-		BTree theTree = new BTree (3 ,3);
+		BTree theTree = new BTree (3 ,3, "filename");
 		System.out.println();
-
-		//		theTree.insertNode(23L);
-		//				System.out.println(theTree.root.objects.get(0));
-		//		theTree.insertNode(23L);
-		//		theTree.insertNode(65L);
 		for (int i = 1; i < 128; i++){
-//			System.out.println("Adding " + i  + "L");
+			//			System.out.println("Adding " + i  + "L");
 			theTree.insertNode((long)(i % 64));
 		}
 		theTree.printBTree();
-		
-		
-		//		BTreeNode thRoot = theTree.insertNode(63L);
-		//		theTree.root.writeNode();
-		//						byte[] bq = asByteArray(63L);
-		//						for (int i = 0; i < bq.length; i++){
-		//							System.out.print(bq[i]);
-		//						}
-		//						System.out.println();
+		System.out.println("numberOfNode: " +theTree.numberOfNodes);
 
 
-
-
-
-		//		for (BTreeNode.TreeObject t : theTree.root.objects){
-		//			System.out.println(t);
-		//		}
-
-
-
-		//		
-		//theTree;
 
 		// Testing of filename Constructor
-		//		BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
-		//		System.out.println();
-		//		ArrayList<BTreeNode.TreeObject> obj2 = aTree.root.objects;
-		//		for (BTreeNode.TreeObject t : obj2){
-		//			System.out.println(t);
-		//		}
+				BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
+				System.out.println();
+				aTree.printBTree();
 
 	}
 
@@ -665,35 +640,35 @@ public class BTree{
 
 
 
-//		/**
-//		 * Constructor for new Node given the sequence as a long, only for first head? 
-//		 * This might not get used.
-//		 * 
-//		 * @param parentLoc 
-//		 * @param seq long representing a sequence
-//		 */
-//		public BTreeNode(long seq){
-//
-//			//TODO only for new Heads
-//
-//			childNodeLocations = new ArrayList<Integer>();
-//			objects = new ArrayList<TreeObject>();
-//
-//			//parent location, always the head
-//			this.parentNodeLocation = -1;
-//
-//			// new node, so only one object
-//			this.currentObjects = 1;
-//			objects.add(new TreeObject(seq));
-//
-//			// this nodes location, used for writing
-//			this.selfNodeLocation = numberOfNodes++;
-//
-//			for (TreeObject t : objects){
-//				System.out.println(t);
-//			}
-//
-//		}
+		//		/**
+		//		 * Constructor for new Node given the sequence as a long, only for first head? 
+		//		 * This might not get used.
+		//		 * 
+		//		 * @param parentLoc 
+		//		 * @param seq long representing a sequence
+		//		 */
+		//		public BTreeNode(long seq){
+		//
+		//			//TODO only for new Heads
+		//
+		//			childNodeLocations = new ArrayList<Integer>();
+		//			objects = new ArrayList<TreeObject>();
+		//
+		//			//parent location, always the head
+		//			this.parentNodeLocation = -1;
+		//
+		//			// new node, so only one object
+		//			this.currentObjects = 1;
+		//			objects.add(new TreeObject(seq));
+		//
+		//			// this nodes location, used for writing
+		//			this.selfNodeLocation = numberOfNodes++;
+		//
+		//			for (TreeObject t : objects){
+		//				System.out.println(t);
+		//			}
+		//
+		//		}
 
 		/**
 		 * Create an empty Node
@@ -727,10 +702,10 @@ public class BTree{
 			objects = new ArrayList<TreeObject>();
 
 			this.currentObjects = byteArrayAsInt(array,0);
-			System.out.println("currentObjects: " + currentObjects);
+//						System.out.println("currentObjects: " + currentObjects);
 
 			this.parentNodeLocation = byteArrayAsInt(array,32);
-			//			System.out.println("parentNodeLocation: " + parentNodeLocation);
+//						System.out.println("parentNodeLocation: " + parentNodeLocation);
 
 			int index = 0;
 
@@ -740,11 +715,11 @@ public class BTree{
 				int val = byteArrayAsInt(array,32 * index++ + 64);
 				if (val != -1){
 					childNodeLocations.add(val);
-//					System.out.println("Inside BTreeNode found child: " + val);
+//										System.out.println("Inside BTreeNode found child: " + val);
 				}
 			}
 
-//			System.out.println("Inside BTreeNode leaf: " + childNodeLocations.size());
+			//			System.out.println("Inside BTreeNode leaf: " + childNodeLocations.size());
 			this.leaf = childNodeLocations.size() == 0;
 
 
@@ -756,7 +731,7 @@ public class BTree{
 			for (int i = 0; i < ((degree * 2) -1); i++){
 				int intval = byteArrayAsInt(array, start + i * 96);
 				long longval = byteArrayAsLong(array, start + i * 96 + 32);
-//				System.out.println("Obj#" + i + ": " +intval + " : " + longval);
+//								System.out.println("Obj#" + i + ": " +intval + " : " + longval);
 				if (intval != -1){
 					verifyObjectCount++;
 					objects.add(new TreeObject(intval,longval));
@@ -765,17 +740,17 @@ public class BTree{
 
 			this.selfNodeLocation = selfLocation;
 
-//			System.out.println("During getNode there is " + objects.size());
-			
-//			System.out.println("CONSTRUCT: " + this);
-			
+			//			System.out.println("During getNode there is " + objects.size());
+
+			//			System.out.println("CONSTRUCT: " + this);
+
 
 
 			if (currentObjects != verifyObjectCount){
 				System.err.println("The current number of Objects saved in the bin is different than the number found");
 				System.out.println(this);
 				System.exit(1);
-				
+
 			}
 
 
@@ -803,10 +778,10 @@ public class BTree{
 				}
 				numObjects++;
 			}
-			
-//			for (int i = 0; i < currArray.length; i++)
-//				System.out.print(currArray[i]);
-//			System.out.println();
+
+			//			for (int i = 0; i < currArray.length; i++)
+			//				System.out.print(currArray[i]);
+			//			System.out.println();
 			return currArray;
 		}
 
@@ -833,15 +808,15 @@ public class BTree{
 			//			System.out.println("Inside writeNode()");
 			//			System.out.println("Selfnodelocation: " + selfNodeLocation);
 
-//			System.out.println("WRITE: " + this);
-			
-			System.out.println("\tcurrentObjects: " + currentObjects);
+			//			System.out.println("WRITE: " + this);
+
+//			System.out.println("\tcurrentObjects: " + currentObjects);
 			result = concat(asByteArray(currentObjects),
 					concat(asByteArray(parentNodeLocation),
 							concat(concatLocations(childNodeLocations),
 									getObjectArrayBytes(objects))));
 			//			System.out.println("inside writeNode\nresult length: " + result.length);
-//			System.out.println("During write there are " + objects.size() + " objects");
+			//			System.out.println("During write there are " + objects.size() + " objects");
 			try {
 				fc.position(96);
 				fc.write(ByteBuffer.wrap(asByteArray(numberOfNodes)));
@@ -852,23 +827,23 @@ public class BTree{
 				e.printStackTrace();
 			}
 
-			
-			
+
+
 
 		}
 
 		@Override
 		public String toString() {
-			
+
 			String s = "<Node> <selfLocation: " + selfNodeLocation + ">  <leaf?: " + leaf + ">  <currentObjects: " + currentObjects + ">   <parentNodeLocation: " + parentNodeLocation + ">\n";
-			
+
 			for (TreeObject t : objects)
 				s+= "Obj<" + t + ">  ";
 			s += "\n";
 			for (int i : childNodeLocations)
 				s+= "Child:<" + i + ">  ";
-//			s += "\n";
-			
+			//			s += "\n";
+
 			return s;
 		}
 
