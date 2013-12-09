@@ -29,6 +29,8 @@ public class BTree{
 	private int numberOfNodes; 
 	private String filename; // filename of binary file
 	private FileChannel fc;
+	private RandomAccessFile aFile;
+//	private ByteBuffer buf;
 
 	// This is the root Node
 	public BTreeNode root;
@@ -63,12 +65,12 @@ public class BTree{
 		this.filename = filename + ".gbk.btree.data." + sequenceLength + "." + degree;
 
 
-		RandomAccessFile aFile;
 		try{
 			aFile = new RandomAccessFile(filename, "rw");
 			fc = aFile.getChannel();
 			fc.position(0);
 			fc.write(ByteBuffer.wrap(header));
+			fc.close();
 		} catch (Exception e){
 			System.err.println("There was an error with the RandomAccessFile: " + filename);
 		}
@@ -86,7 +88,6 @@ public class BTree{
 	 */
 	public BTree(String fileName){
 
-		RandomAccessFile aFile;
 		ByteBuffer buf;
 		//int bytesRead = 0;
 
@@ -108,7 +109,7 @@ public class BTree{
 			this.sequenceLength = byteArrayAsInt(dst,32);
 			this.degree = byteArrayAsInt(dst,64);
 			this.numberOfNodes = byteArrayAsInt(dst,96);
-			
+			fc.close();
 		} catch (FileNotFoundException e){
 			System.err.println("There was an error with the RandomAccessFile: " + fileName);
 		} catch (Exception e){
@@ -120,6 +121,7 @@ public class BTree{
 		if (numberOfNodes > 0){
 			this.root = getRoot(0);
 		}
+		
 
 //		System.out.print("seqL = " + this.sequenceLength + "\n" +
 //				"degree = " + this.degree + "\n" +
@@ -173,7 +175,17 @@ public class BTree{
 
 		int bitLocation = nodeLocation(location);
 //		System.out.println("IN getNode()\nLocation: " + location + "\nBitLocation: " + bitLocation + " nodeSize:" + nodeSize);
-
+		
+		
+		try {
+			aFile = new RandomAccessFile(filename, "rw");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		//aFile = new RandomAccessFile(fileName, "rw");
+		fc = aFile.getChannel();
+		//ByteBuffer buf = ByteBuffer.allocate(headerSize);
 
 		byte[] result = new byte[nodeSize];
 
@@ -186,7 +198,7 @@ public class BTree{
 			fc.read(buf, bitLocation);
 			buf.flip();
 			buf.get(result, 0, nodeSize);
-
+			fc.close();
 		} catch (FileNotFoundException e){
 			System.err.println("There was an error with the RandomAccessFile: " + filename);
 		} catch (Exception e){
@@ -550,14 +562,14 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-	/*	BTree theTree = new BTree (0, 4, "filename", 12);
+		BTree theTree = new BTree (3, 3, "filename");
 		System.out.println();
 		for (int i = 1; i < 2024; i++){
 			//			System.out.println("Adding " + i  + "L");
 			theTree.insertNode((long)(i % 1000));
 		}
 		theTree.printBTree();
-		System.out.println("numberOfNode: " +theTree.numberOfNodes); */
+		System.out.println("numberOfNode: " +theTree.numberOfNodes); 
 
 
 
@@ -691,7 +703,15 @@ public class BTree{
 		 * This method writes the Node to the bin file
 		 */
 		public void writeNode(){
-
+			try {
+				aFile = new RandomAccessFile(filename, "rw");
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			fc = aFile.getChannel();
+			
+			
 			int bitLocation = selfNodeLocation * nodeSize + headerSize;
 			byte[] result = new byte[nodeSize];
 
@@ -706,6 +726,7 @@ public class BTree{
 				// Update Node info in bin
 				fc.position(bitLocation);
 				fc.write(ByteBuffer.wrap(result));
+				fc.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
