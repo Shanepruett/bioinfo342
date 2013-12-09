@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  */
 public class Cache <E> {
 
-	private java.util.LinkedList<E> cache;
+	public java.util.LinkedList<E> cache;
 	private int max;
 
 	/**
@@ -46,21 +46,31 @@ public class Cache <E> {
 		return retObject;
 	}
 
+//	public E getAtIndex(int index){
+//		
+//		
+//		return cache.get(index);
+//	}
+	
+	
+	
 	/**
 	 * @param object the generic object to add to the cache
 	 */
-	public void addObject(E object){
+	public E addObject(E object){
 
 		// if the cache is not max size
 		if (cache.size() < max){
 			cache.addFirst(object);
+			return object;
 		}
 
 		// when the cache is max
 		else {
 			// remove the oldest object, add new object to beginning
-			cache.removeLast();
+			E removed = cache.removeLast();
 			cache.addFirst(object);
+			return removed;
 		}
 
 

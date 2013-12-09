@@ -345,9 +345,10 @@ public class BTree{
 	 * 
 	 * @param kSeq long representation of the sequence
 	 */
-	public void insertNode(long kSeq){
+	public BTreeNode insertNode(long kSeq){
 
 		BTreeNode theRoot = root;
+		BTreeNode returned = theRoot;
 		//		System.out.println("Compare Root: " + theRoot.objects.size() + " ? " + theRoot.currentObjects);
 		
 		// Just in case the root needs split
@@ -362,10 +363,10 @@ public class BTree{
 			insertNonFull(s,kSeq);
 		}
 		else {
-			insertNonFull(theRoot,kSeq);
+			returned = insertNonFull(theRoot,kSeq);
 		}
 
-
+		return returned;
 	}
 
 	/**
@@ -421,7 +422,7 @@ public class BTree{
 	 * @param xNode
 	 * @param kSeq
 	 */
-	private void insertNonFull(BTreeNode xNode, long kSeq){
+	private BTreeNode insertNonFull(BTreeNode xNode, long kSeq){
 		int i = xNode.currentObjects;
 
 		if (xNode.leaf){
@@ -430,7 +431,7 @@ public class BTree{
 				if (kSeq == xNode.objects.get(i-1).sequence){
 					xNode.objects.get(i-1).frequency++;
 					xNode.writeNode();
-					return;
+					return xNode;
 				}
 				i--;
 			}
@@ -444,6 +445,7 @@ public class BTree{
 
 
 			xNode.writeNode();
+			return xNode;
 
 		}
 		else {
@@ -453,7 +455,7 @@ public class BTree{
 					xNode.objects.get(i-1).frequency++;
 //					System.out.println("A value was equal <" + xNode.objects.get(i-1));
 					xNode.writeNode();
-					return;
+					return xNode;
 				}
 				i--;
 			}
@@ -468,10 +470,10 @@ public class BTree{
 				if (kSeq > xNode.objects.get(i-1).sequence)
 					i++;
 			}
-			insertNonFull(getNode(xNode.childNodeLocations.get(i-1)), kSeq);
+			return insertNonFull(getNode(xNode.childNodeLocations.get(i-1)), kSeq);
 
 		}
-
+		
 	}
 
 	/**

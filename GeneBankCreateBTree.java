@@ -7,8 +7,8 @@ import java.io.File;
 public class GeneBankCreateBTree {
 
 	public static void main(String[] args) {
-		int debugLevel = 0, cacheSize, degree = 0, seqLength;
-		boolean useCache;
+		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength;
+		boolean useCache =false;
 		String gbk;
 		
 		if(args.length == 4)
@@ -46,7 +46,7 @@ public class GeneBankCreateBTree {
 		}
 		else
 			throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
-		if(args[1] == "0")
+	//	if(args[1] == "0")
 			//TODO : figure this out;
 		try {
 			degree = Integer.parseInt(args[1]);
@@ -59,15 +59,22 @@ public class GeneBankCreateBTree {
 		if(seqLength < 1 || seqLength > 31)
 			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
 		
+		Cache cache = null;
 		
-		
-		
+		if(useCache){
+			cache = new Cache(cacheSize);
+			System.out.println("using cache!!");
+		}
 
 		String line = "", sequence = "", range;
 		long value, start = System.currentTimeMillis();
 		char x;
 		boolean readIn = false;
 		File input;
+		BTree tree = new BTree(seqLength, degree, gbk);
+		System.out.println("Sequence length: " + seqLength);
+		System.out.println("Degree: " + degree);
+		System.out.println("File: " + gbk);
 		
 		input = new File(gbk);
 		
@@ -114,6 +121,41 @@ public class GeneBankCreateBTree {
 									else if(x == 't')
 										value = value * 4 + 0b11;
 								}
+								
+								if (useCache && cache.cache.size() > 0)
+									
+									for (int jindex = 0; jindex < cache.cache.size(); jindex++/*Object b : cache.cache*/){
+										
+										BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(jindex);
+										
+										System.out.println(bt);
+										
+										for (int index = 0; index < bt.objects.size(); index++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
+//											System.out.println("Stuck inside nested for");
+											
+											BTree.BTreeNode.TreeObject t = (BTree.BTreeNode.TreeObject) bt.objects.get(index);
+											System.out.println("value of sequence: " + t.getSequence());
+											if (value == t.getSequence()){
+												System.out.println("A VALUE IS EQUAL");
+												t.incrementFreq();
+												//bt.writeNode();
+											}
+											else {
+												BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
+												obj.writeNode();
+											}
+										}
+									}
+								
+								else{
+									if (useCache){
+										cache.addObject(tree.insertNode(value));
+									}
+									else{
+										tree.insertNode(value);
+									}
+								}
+							
 							}
 							else
 								throw new IOException(gbk + "is not properly formatted");
@@ -146,7 +188,7 @@ public class GeneBankCreateBTree {
 		}
 		System.out.println("Closing");
 			
-	
+		tree.printBTree();
 		
 		if(debugLevel == 2) {
 			long time = System.currentTimeMillis()-start;
