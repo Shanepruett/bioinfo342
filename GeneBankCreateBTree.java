@@ -70,12 +70,6 @@ public class GeneBankCreateBTree {
 		File input;
 		
 		input = new File(gbk);
-		/*try {
-			input = new File(gbk);
-		} 
-		catch (FileNotFoundException e) {
-			throw new FileNotFoundException("File " + gbk + " could not be found");
-		}*/
 		
 		BufferedReader read = null;
 		try {
