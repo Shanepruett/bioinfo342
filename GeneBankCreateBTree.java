@@ -1,20 +1,16 @@
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.io.File;
 
-
 public class GeneBankCreateBTree {
-	public static int debugLevel, cacheSize, degree, seqLength;
-	public static boolean useCache;
-	public static String gbk;
-	
-	private static void readArgs(String[] args) throws IllegalArgumentException {
+
+	public static void main(String[] args) {
+		int debugLevel = 0, cacheSize, degree = 0, seqLength;
+		boolean useCache;
+		String gbk;
+		
 		if(args.length == 4)
 			debugLevel = 0;
 		else if(args.length == 5) {
@@ -62,21 +58,17 @@ public class GeneBankCreateBTree {
 		seqLength = Integer.parseInt(args[3]);
 		if(seqLength < 1 || seqLength > 31)
 			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
-	}
-	/**
-	 * @param args
-	 * @throws IOException 
-	 */
-	@SuppressWarnings("resource")
-	public static void main(String[] args) throws IOException {
+		
+		
+		
+		
+
 		String line = "", sequence = "", range;
 		long value, start = System.currentTimeMillis();
 		char x;
 		boolean readIn = false;
-		
-		readArgs(args);
 		File input;
-				
+		
 		input = new File(gbk);
 		/*try {
 			input = new File(gbk);
@@ -85,20 +77,24 @@ public class GeneBankCreateBTree {
 			throw new FileNotFoundException("File " + gbk + " could not be found");
 		}*/
 		
-		BufferedReader read = new BufferedReader(new FileReader(input));
+		BufferedReader read = null;
+		try {
+			read = new BufferedReader(new FileReader(input));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		try {
-			BTree tree = new BTree(seqLength, degree, gbk);
 			line = read.readLine();
-			System.out.println(line);
 			while(line != null) {
-			System.out.println("inside While");
 				line = line.toLowerCase();
 			line = line.replaceAll("[^a-zA-Z/]","");
-				if(line.equals("origin")){
+				if(line.contains("origin")){
 					System.out.println("inside contains origin");
 					sequence = "";
 					line = read.readLine();
+					line = line.replaceAll("[^a-zA-Z/]","");
 					readIn = true;
 					//continue;
 				}
@@ -106,9 +102,9 @@ public class GeneBankCreateBTree {
 					System.out.println(sequence);
 					readIn = false;
 					int i = 0;
-					
+					System.out.println("Sequence length: " + seqLength);
+					System.out.println("sequence.length():" + sequence.length());
 					while(i+seqLength <= sequence.length()) {
-						
 						value = 0;
 						range = sequence.substring(i, i+seqLength);
 						if(!range.contains("n")) {
@@ -137,14 +133,23 @@ public class GeneBankCreateBTree {
 					sequence = sequence + line;
 				}
 				line = read.readLine();
-				System.out.println(line);
 			}
 		}	
 		catch(IOException e) {
-			throw new IOException(gbk + " not accessible or not formatted properly");
+			try {
+				throw new IOException(gbk + " not accessible or not formatted properly");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 			
-		read.close();
+		try {
+			read.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.out.println("Closing");
 			
 	
