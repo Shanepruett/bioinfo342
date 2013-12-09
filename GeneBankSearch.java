@@ -4,37 +4,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-
-/**
- * @author: Brandon Quirarte, Shane Pruett, Stephanie Potter
- * @class: CS 342
- * @assignment: BTree
- * 
- * @description:  This class is used to search for a sequence of a specified length
- */
-
-
-//Searches BTree for sequences of a specified length
-//Root node must be kept in memory
-//Need cache class?
-
-
-//Arguments for cache, BTree file, Query file, cache size, and debug level
-//Debug level is optional
-	//Default is 0
-//Debug levels:
-	//0: The output of the queries should be printed on the standard output 
-	//stream. Any diagnostic messages, help and status messages must be be 
-	//printed on standard error stream
-
-
-public class GeneBankSearch {
-	public static int debugLevel, cacheSize;
-	public static boolean useCache;
-	public static String file, query;
-
-	@SuppressWarnings("unused")
-	private static void readArgs(String[] args) throws IllegalArgumentException {
+	
+	@SuppressWarnings("resource")
+	public static void main(String[] args) throws IOException {
+		int debugLevel, cacheSize;
+		boolean useCache;
+		String file, query;
 		
 		/* Cache size and debug level are ignored, debug level set to default: 0 */
 		if(args.length == 3) 
@@ -50,7 +25,6 @@ public class GeneBankSearch {
 			}
 			debugLevel = 0;
 		}
-		
 		/* Cache size and debug level are provided */
 		else if(args.length == 5) {
 			/* Cache size */
@@ -70,14 +44,12 @@ public class GeneBankSearch {
 			if(debugLevel != 0 && debugLevel != 1)
 				throw new IllegalArgumentException("Debug level must be either 0 or 1");
 		}
-		
 		/* Catch error in number of arguments provided */
 		else
 			throw new IllegalArgumentException("Expected arguments: \n " +
 					"java GeneBankSearch <0/1(no/withCache)>" +
 					"<btree file> <query file> [<cache size>]" +
 					"[<debug level>]");
-		
 		/* args[0] determines whether or not cache is used */
 		if(args[0] == "0")
 			useCache = false;
@@ -86,37 +58,43 @@ public class GeneBankSearch {
 		else
 			throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
 		
-		/* File name */
+		/* BTree File name */
 		file = args[1];
 		
 		/* Query file */
 		query = args[2];
-	}
-	
-	@SuppressWarnings("resource")
-	public static void main(String[] args) throws IOException {
+		
+		
 		
 		
 		String nextLine;
 		char value;
 		long sequence = 0;
 		FileInputStream queryFile;
+		long start = System.currentTimeMillis();
 		
+		/* Query file to be parsed */
 		try {
 			queryFile = new FileInputStream(query);
 		}
 		catch(FileNotFoundException e) {
 			throw new FileNotFoundException("File provided not found");
 		}
+		
+		/* Reader for the query files */
 		BufferedReader queryReader = new BufferedReader(new InputStreamReader(queryFile, Charset.forName("UTF-8")));
 		
 		try {
+			int stringLength = tree.getSequenceLength();
+			/* While there is more to be read in the query, remove all spaces */
 			while((nextLine = queryReader.readLine()) != null) {
 				nextLine = nextLine.replaceAll("\\s", "");
 				nextLine = nextLine.toLowerCase();
-				
+				/* Checks to see if line contains an n, if not continue to parsing file */
 				if(!nextLine.contains("n")) {
 					if(nextLine.matches("^[actg]+$"))
+						if(nextLine.length() != stringLength)
+							throw new invalidArgumentException(e + "Query and BTree must have same string lengths");
 						for(int i = 0; i < nextLine.length(); i++) {
 							value = nextLine.charAt(i);
 							if(value == 'a')
@@ -128,10 +106,17 @@ public class GeneBankSearch {
 							else if(value == 'g')
 								sequence = sequence * 4 + 0b10;
 						}
+						
+						frequence = tree.search(sequence);
+						if(frequence != 0)
+							System.out.println(nextLine + ":" + frequency);
 				}
 				else throw new IOException("File provided is formatted incorrectly.");
 			}
 		}
+		
+		tree.complete();
+		
 		catch(IOException e) {
 			try {
 				queryFile.close();
@@ -142,5 +127,5 @@ public class GeneBankSearch {
 			throw new IOException("File is not working properly. Please check that file" +
 					"exists and is properly formatted.");
 		}
-	}
+	} 
 }
