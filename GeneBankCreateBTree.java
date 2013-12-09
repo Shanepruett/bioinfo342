@@ -10,7 +10,7 @@ public class GeneBankCreateBTree {
 		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength;
 		boolean useCache =false;
 		String gbk;
-		
+
 		if(args.length == 4)
 			debugLevel = 0;
 		else if(args.length == 5) {
@@ -22,7 +22,7 @@ public class GeneBankCreateBTree {
 			}
 			debugLevel = 0;
 		}
-		
+
 		else if(args.length == 6) {
 			try {
 				cacheSize = Integer.parseInt(args[4]);
@@ -38,7 +38,7 @@ public class GeneBankCreateBTree {
 					"java GeneBankSearch <0/1(no/withCache)>" +
 					"<degree> <gbk file> <sequence length> [<cache size>]" +
 					"[<debug level>]");
-		
+
 		if(Integer.parseInt(args[0]) == 0)
 			useCache = false;
 		else if(Integer.parseInt(args[0]) == 1) {
@@ -46,8 +46,8 @@ public class GeneBankCreateBTree {
 		}
 		else
 			throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
-	//	if(args[1] == "0")
-			//TODO : figure this out;
+		//	if(args[1] == "0")
+		//TODO : figure this out;
 		try {
 			degree = Integer.parseInt(args[1]);
 		}
@@ -58,9 +58,10 @@ public class GeneBankCreateBTree {
 		seqLength = Integer.parseInt(args[3]);
 		if(seqLength < 1 || seqLength > 31)
 			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
-		
+
 		Cache cache = null;
-		
+		boolean found;
+
 		if(useCache){
 			cache = new Cache(cacheSize);
 			System.out.println("using cache!!");
@@ -75,9 +76,9 @@ public class GeneBankCreateBTree {
 		System.out.println("Sequence length: " + seqLength);
 		System.out.println("Degree: " + degree);
 		System.out.println("File: " + gbk);
-		
+
 		input = new File(gbk);
-		
+
 		BufferedReader read = null;
 		try {
 			read = new BufferedReader(new FileReader(input));
@@ -85,12 +86,12 @@ public class GeneBankCreateBTree {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		try {
 			line = read.readLine();
 			while(line != null) {
 				line = line.toLowerCase();
-			line = line.replaceAll("[^a-zA-Z/]","");
+				line = line.replaceAll("[^a-zA-Z/]","");
 				if(line.contains("origin")){
 					System.out.println("inside contains origin");
 					sequence = "";
@@ -121,41 +122,51 @@ public class GeneBankCreateBTree {
 									else if(x == 't')
 										value = value * 4 + 0b11;
 								}
-								
-								if (useCache && cache.cache.size() > 0)
-									
-									for (int jindex = 0; jindex < cache.cache.size(); jindex++/*Object b : cache.cache*/){
-										
-										BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(jindex);
-										
-										System.out.println(bt);
-										
-										for (int index = 0; index < bt.objects.size(); index++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
-//											System.out.println("Stuck inside nested for");
-											
-											BTree.BTreeNode.TreeObject t = (BTree.BTreeNode.TreeObject) bt.objects.get(index);
-											System.out.println("value of sequence: " + t.getSequence());
+								if (useCache && cache.cache.size() > 0){
+									found = false;
+									for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++/*Object b : cache.cache*/){
+
+										BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
+
+										//	System.out.println(bt);
+
+										for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
+											//	System.out.println("Stuck inside nested for");
+
+											BTree.BTreeNode.TreeObject t = /*(BTree.BTreeNode.TreeObject)*/ bt.objects.get(sIndex);
+											//	System.out.println("value of sequence: " + t.getSequence());
 											if (value == t.getSequence()){
-												System.out.println("A VALUE IS EQUAL");
+//												System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
+//												System.out.print("val: " + value + " FB:" + t.getFreq());
 												t.incrementFreq();
+//												System.out.println(" FA: " + t.getFreq());
+												cache.getObject(bt);
+												found = true;
+												break;
 												//bt.writeNode();
 											}
 											else {
 												BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
+//												System.out.println("CacheSize: " + cache.cache.size());
 												obj.writeNode();
 											}
 										}
+										if (found){
+//											System.out.println("Out of loops");
+											break;
+										}
 									}
-								
+								}
 								else{
 									if (useCache){
 										cache.addObject(tree.insertNode(value));
+//										System.out.println("CacheSize: " + cache.cache.size());
 									}
 									else{
 										tree.insertNode(value);
 									}
 								}
-							
+
 							}
 							else
 								throw new IOException(gbk + "is not properly formatted");
@@ -179,7 +190,7 @@ public class GeneBankCreateBTree {
 				e1.printStackTrace();
 			}
 		}
-			
+
 		try {
 			read.close();
 		} catch (IOException e) {
@@ -187,9 +198,9 @@ public class GeneBankCreateBTree {
 			e.printStackTrace();
 		}
 		System.out.println("Closing");
-			
+
 		tree.printBTree();
-		
+
 		if(debugLevel == 2) {
 			long time = System.currentTimeMillis()-start;
 			System.out.println("Total time: " + time);

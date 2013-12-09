@@ -52,6 +52,16 @@ public class Cache <E> {
 //		return cache.get(index);
 //	}
 	
+	public BTree.BTreeNode.TreeObject getObject(long seq){
+		
+		
+		
+		
+		
+		
+		return null;
+	}
+	
 	
 	
 	/**

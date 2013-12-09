@@ -180,7 +180,6 @@ public class BTree{
 		try {
 			aFile = new RandomAccessFile(filename, "rw");
 		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		//aFile = new RandomAccessFile(fileName, "rw");
@@ -360,7 +359,7 @@ public class BTree{
 			s.currentObjects = 0;
 			s.childNodeLocations.add(theRoot.selfNodeLocation);
 			splitChild(s,1);
-			insertNonFull(s,kSeq);
+			returned = insertNonFull(s,kSeq);
 		}
 		else {
 			returned = insertNonFull(theRoot,kSeq);
@@ -467,8 +466,17 @@ public class BTree{
 			BTreeNode child = getNode(xNode.childNodeLocations.get(i-1));
 			if (child.currentObjects == (degree * 2 - 1)){
 				splitChild(xNode,i);
-				if (kSeq > xNode.objects.get(i-1).sequence)
+				if (kSeq >= xNode.objects.get(i-1).sequence){
+					if (kSeq == xNode.objects.get(i-1).sequence){
+						xNode.objects.get(i-1).frequency++;
+//						System.out.println("A value was equal <" + xNode.objects.get(i-1));
+						xNode.writeNode();
+						return xNode;
+					
+					}
 					i++;
+					}
+				
 			}
 			return insertNonFull(getNode(xNode.childNodeLocations.get(i-1)), kSeq);
 
@@ -481,14 +489,20 @@ public class BTree{
 	 */
 	public void printBTree(){
 
-		String s ="";
+//		String s ="";
+//		for (BTreeNode.TreeObject b : root.objects){
+//			s+= b.getSequenceString() + " v:" + b.sequence + " ";
+//		}
+//
+//
+//		System.out.println("ROOT: " + s);
+//		printChildNodes(root.childNodeLocations, 1);
+		
+		
 		for (BTreeNode.TreeObject b : root.objects){
-			s+= b.getSequenceString() + " v:" + b.sequence + " ";
+			System.out.println(b);
+			printChildNodes(root.childNodeLocations, 1);
 		}
-
-
-		System.out.println("ROOT: " + s);
-		printChildNodes(root.childNodeLocations, 1);
 
 	}
 
@@ -500,21 +514,22 @@ public class BTree{
 	 */
 	private void printChildNodes(ArrayList<Integer> children, int tabs){
 
-		String s = "";
+//		String s = "";
 
 		for (int i : children){
 			if (i != -1){
 			BTreeNode b = getNode(i);
 
 			for (BTreeNode.TreeObject t : b.objects){
-				s += " [<" + t.getSequenceString() + "=:=" + t.sequence + ">#" + t.frequency +"] ";
+				System.out.println(t);
+//				s += " [<" + t.getSequenceString() + "=:=" + t.sequence + ">#" + t.frequency +"] ";
 			}
 			printChildNodes(b.childNodeLocations, tabs + 1);
 			}
 		}
 
-		if (s.length() != 0)
-			System.out.println("[DEPTH=" + tabs + "] " + s);
+//		if (s.length() != 0)
+//			System.out.println("[DEPTH=" + tabs + "] " + s);
 
 
 
