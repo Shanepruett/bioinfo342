@@ -1,4 +1,5 @@
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -574,16 +575,16 @@ public class BTree{
 	/**
 	 * This method prints some debugging info to the konsole
 	 */
-	public void printBTree(){
+	public void printBTree(BufferedWriter b){
 
-		String s ="";
-		for (BTreeNode.TreeObject b : root.objects){
-			s+= b.getSequenceString() + " v:" + b.sequence + " ";
-		}
-
-
-		System.out.println("ROOT: " + s);
-		printChildNodes(root.childNodeLocations, 1);
+//		String s ="";
+//		for (BTreeNode.TreeObject b : root.objects){
+//			s+= b.getSequenceString() + " v:" + b.sequence + " ";
+//		}
+//
+//
+//		System.out.println("ROOT: " + s);
+		printNode(root, b);
 		
 		
 //		for (BTreeNode.TreeObject b : root.objects){
@@ -602,29 +603,55 @@ public class BTree{
 	 * @param children
 	 * @param tabs
 	 */
-	private void printChildNodes(ArrayList<Integer> children, int tabs){
+	private void printNode(BTreeNode node, BufferedWriter b){
 
-		String s = "";
-
-		for (int i : children){
-			if (i != -1){
-			BTreeNode b = getNode(i);
-
-			for (BTreeNode.TreeObject t : b.objects){
-//				System.out.println(t);
-				s += " [<" + t.getSequenceString() + "=:=" + t.sequence + ">#" + t.frequency +"] ";
-			}
-			printChildNodes(b.childNodeLocations, tabs + 1);
+//		String t = s;
+//		String s = "";
+//
+//		for (int i : children){
+//			if (i != -1){
+//			BTreeNode b = getNode(i);
+//
+//			for (BTreeNode.TreeObject t : b.objects){
+////				System.out.println(t);
+//				s += " [<" + t.getSequenceString() + "=:=" + t.sequence + ">#" + t.frequency +"] ";
+//			}
+//			printChildNodes(b.childNodeLocations, tabs + 1);
+//			}
+//		}
+//
+//		if (s.length() != 0)
+//			System.out.println("[DEPTH=" + tabs + "] " + s);
+		
+		if (node.childNodeLocations.size() ==0){
+			for (int i = 0; i < node.currentObjects; i++){
+//				t = t + node.objects.get(i) + "\n";
+				try {
+					b.write("" + node.objects.get(i) + " \n");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
+		
+		for (int i = 0; i < node.childNodeLocations.size(); i++){
+			printNode(getNode(node.childNodeLocations.get(i)), b);
+			if (i < node.currentObjects){
+//				t = t + node.objects.get(i) + "\n";
+				try {
+					b.write("" + node.objects.get(i) + "\n");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+//		return t;
 
-		if (s.length() != 0)
-			System.out.println("[DEPTH=" + tabs + "] " + s);
 
-
-
-
-
+		
 	}
 
 
@@ -669,21 +696,21 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-		BTree theTree = new BTree (5, 4, "filename.gbk");
-		System.out.println();
-		for (int i = 1; i < 512; i++){
-			//			System.out.println("Adding " + i  + "L");
-			theTree.insertNode((long)(i % 256));
-		}
-		theTree.printBTree();
+//		BTree theTree = new BTree (5, 4, "filename.gbk");
+//		System.out.println();
+//		for (int i = 1; i < 512; i++){
+//			//			System.out.println("Adding " + i  + "L");
+//			theTree.insertNode((long)(i % 256));
+//		}
+//		theTree.printBTree();
 //		System.out.println("numberOfNode: " +theTree.numberOfNodes); 
 
 
 		// TODO HERE!
 		// Testing of filename Constructor
-				BTree aTree = new BTree ("filename.gbk.btree.data.5.4"/*"filename.gbk.btree.data.3.3"*/);
-				System.out.println();
-				aTree.printBTree();
+//				BTree aTree = new BTree ("filename.gbk.btree.data.5.4"/*"filename.gbk.btree.data.3.3"*/);
+//				System.out.println();
+//				aTree.printBTree();
 
 	}
 
@@ -750,6 +777,7 @@ public class BTree{
 			}
 			
 			this.leaf = childNodeLocations.size() == 0;
+//			System.out.println("is a leaf? " + leaf + "  #children=" + childNodeLocations.size());
 			
 			if (currentObjects + 1 != verifyChildrenCount && !leaf){
 				System.err.println("The current number of Children saved in the bin is different than the number found " + 

@@ -10,13 +10,18 @@ import java.util.ArrayList;
 public class GeneBankCreateBTree {
 
 	public static void main(String[] args) throws IOException {
-		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength, sizelong = 8, sizeint = 4;
+		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength;
 		boolean useCache =false;
 		String gbk;
 
-		if(args.length == 4)
+		/* No cache size or debug level provided */
+		if(args.length == 4) {
 			debugLevel = 0;
-		else if(args.length == 5) {
+			if(Integer.parseInt(args[1]) == 1)
+				throw new IllegalArgumentException("If using a cache, please provide cache size");
+		}
+		/* 5 arguments provided, using cache which means that cache size is provided */
+		else if(args.length == 5 && Integer.parseInt(args[0]) == 1) {
 			try{
 				cacheSize = Integer.parseInt(args[4]);
 			}
@@ -24,6 +29,18 @@ public class GeneBankCreateBTree {
 				throw new IllegalArgumentException("Please enter cache size as an int value");
 			}
 			debugLevel = 0;
+		}
+		/* 5 arguments provided, not using cache which means debug level provided */
+		else if(args.length == 5 && Integer.parseInt(args[0]) == 0) {
+			try{
+				if(Integer.parseInt(args[4]) == 0 || Integer.parseInt(args[4]) == 1)
+					debugLevel = Integer.parseInt(args[4]);
+				else
+					throw new IllegalArgumentException("Please enter value 0 or 1 for debugLevel");
+			}
+			catch(NumberFormatException e) {
+				throw new IllegalArgumentException("Please enter debugLevel as an int value");
+			}
 		}
 
 		else if(args.length == 6) {
@@ -39,8 +56,8 @@ public class GeneBankCreateBTree {
 				} catch (NumberFormatException e){
 					throw new IllegalArgumentException("\ndebug must be of type int.");
 				}
-				if(debugLevel != 1 & debugLevel != 0 & debugLevel != 2)
-					throw new IllegalArgumentException("\ndebug must be 0, 1 or 2.");
+				if(debugLevel != 1 && debugLevel != 0)
+					throw new IllegalArgumentException("\ndebug must be 0 or 1.");
 			} 
 		}
 		else
@@ -60,17 +77,18 @@ public class GeneBankCreateBTree {
 		if(seqLength < 1 || seqLength > 31)
 			throw new IllegalArgumentException("seqLength must be between 1 and 31, inclusive");
 
-		if(args[1] == "0") {
-			degree = 4096/(sizelong*(2*seqLength) + sizeint*2*seqLength + sizeint*(2*seqLength+1) + sizeint + sizeint);
-			System.out.println("Degree: " + degree);
-		}
-
 		try {
 			degree = Integer.parseInt(args[1]);
 		}
 		catch(NumberFormatException e) {
 			throw new IllegalArgumentException("Please enter degree as an int value");
 		}
+		
+		if(Integer.parseInt(args[1]) == 0) {
+			degree = 16;
+//			System.out.println("Degree: " + degree);
+		}
+		
 		gbk = args[2];
 
 		Cache<BTree.BTreeNode> cache = null;
@@ -78,7 +96,7 @@ public class GeneBankCreateBTree {
 
 		if(useCache){
 			cache = new Cache(cacheSize);
-			System.out.println("using cache!!");
+//			System.out.println("using cache!!");
 		}
 
 		String line = "", sequence = "", range;
@@ -107,7 +125,7 @@ public class GeneBankCreateBTree {
 				line = line.toLowerCase();
 				line = line.replaceAll("[^a-zA-Z/]","");
 				if(line.contains("origin")){
-					System.out.println("inside contains origin");
+//					System.out.println("inside contains origin");
 					sequence = "";//BIGCHANGE
 					line = read.readLine();
 					line = line.replaceAll("[^a-zA-Z/]","");
@@ -115,11 +133,11 @@ public class GeneBankCreateBTree {
 					//continue;
 				}
 				if(line.equals("//")) {
-					System.out.println(sequence);
+//					System.out.println(sequence);
 					readIn = false;
 					sequenceList.add(sequence);
-					System.out.println("Sequence length: " + seqLength);
-					System.out.println("sequence.length():" + sequence.length());
+//					System.out.println("Sequence length: " + seqLength);
+//					System.out.println("sequence.length():" + sequence.length());
 				}
 				if(readIn) {
 					line = line.replaceAll("[0-9] ", "");
@@ -144,12 +162,12 @@ public class GeneBankCreateBTree {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Closing");
+//		System.out.println("Closing");
 
 		BTree tree = new BTree(seqLength, degree, gbk);
-		System.out.println("Sequence length: " + seqLength);
-		System.out.println("Degree: " + degree);
-		System.out.println("File: " + gbk);
+//		System.out.println("Sequence length: " + seqLength);
+//		System.out.println("Degree: " + degree);
+//		System.out.println("File: " + gbk);
 
 		for (String s : sequenceList){
 			int i = 0;
@@ -199,7 +217,7 @@ public class GeneBankCreateBTree {
 									}
 								}
 								if (found){
-									System.out.println("Out of loops");
+//									System.out.println("Out of loops");
 									break;
 								}
 							}
@@ -207,7 +225,7 @@ public class GeneBankCreateBTree {
 						else{
 							if (useCache){
 								cache.addObject(tree.insertNode(value));
-								System.out.println("CacheSize: " + cache.cache.size());
+//								System.out.println("CacheSize: " + cache.cache.size());
 							}
 							else{
 								tree.insertNode(value);
@@ -222,15 +240,17 @@ public class GeneBankCreateBTree {
 			}
 		}
 
-		tree.printBTree();
+//		tree.printBTree();
 
 		if(debugLevel == 1){
-			/* System.out.println("Num Inserts = " + inserts); */
+//			System.out.println("RECURSIVE RESULTS");
+////			tree.printBTree();
+//			System.out.println(tree.printBTree());
 			BufferedWriter writer = null;
 			try{
 				File dump = new File("dump");
 				writer = new BufferedWriter(new FileWriter(dump));
-				writer.write(tree.toString());
+				tree.printBTree(writer);
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -241,12 +261,7 @@ public class GeneBankCreateBTree {
 				}
 			}
 		}
-
-		if(debugLevel == 2) {
-			long time = System.currentTimeMillis()-start;
-			System.out.println("Total time: " + time);
-		}
-		System.out.println("Number of Nodes: " + tree.numberOfNodes);
+//		System.out.println("Number of Nodes: " + tree.numberOfNodes);
 //		tree.writeBTree();
 	}
 }

@@ -166,7 +166,7 @@ public class GeneBankSearch {
                 }
                 BTree tree = new BTree(BTreeFile);
                 
-                tree.printBTree();
+//                tree.printBTree();//TODO
                 
                 for(Long l : queryList) {
 //                	System.out.println("Value" + l);
