@@ -99,7 +99,8 @@ public class BTree{
 			//bytesRead = 
 			fc.read(buf, 0);
 			buf.flip();
-
+ 
+			
 			byte[] dst = new byte[headerSize];
 
 
@@ -500,8 +501,11 @@ public class BTree{
 		
 		
 		for (BTreeNode.TreeObject b : root.objects){
+			
 			System.out.println(b);
+			
 			printChildNodes(root.childNodeLocations, 1);
+			
 		}
 
 	}
@@ -579,21 +583,21 @@ public class BTree{
 		//		System.out.println("val1 = " + val1 + "\nval2 = " + val2);
 
 		// Testing of constructor
-		BTree theTree = new BTree (3, 3, "filename");
-		System.out.println();
-		for (int i = 1; i < 2024; i++){
-			//			System.out.println("Adding " + i  + "L");
-			theTree.insertNode((long)(i % 1000));
-		}
-		theTree.printBTree();
-		System.out.println("numberOfNode: " +theTree.numberOfNodes); 
+//		BTree theTree = new BTree (3, 3, "filename");
+//		System.out.println();
+//		for (int i = 1; i < 2024; i++){
+//			//			System.out.println("Adding " + i  + "L");
+//			theTree.insertNode((long)(i % 1000));
+//		}
+//		theTree.printBTree();
+//		System.out.println("numberOfNode: " +theTree.numberOfNodes); 
 
 
 
 		// Testing of filename Constructor
-//				BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
-//				System.out.println();
-//				aTree.printBTree();
+				BTree aTree = new BTree ("filename.gbk.btree.data.3.3");
+				System.out.println();
+				aTree.printBTree();
 
 	}
 
