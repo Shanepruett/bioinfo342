@@ -3,10 +3,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.File;
+import java.util.ArrayList;
 
 public class GeneBankCreateBTree {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength;
 		boolean useCache =false;
 		String gbk;
@@ -72,10 +73,10 @@ public class GeneBankCreateBTree {
 		char x;
 		boolean readIn = false;
 		File input;
-		BTree tree = new BTree(seqLength, degree, gbk);
-		System.out.println("Sequence length: " + seqLength);
-		System.out.println("Degree: " + degree);
-		System.out.println("File: " + gbk);
+//		BTree tree = new BTree(seqLength, degree, gbk);
+//		System.out.println("Sequence length: " + seqLength);
+//		System.out.println("Degree: " + degree);
+//		System.out.println("File: " + gbk);
 
 		input = new File(gbk);
 
@@ -86,7 +87,7 @@ public class GeneBankCreateBTree {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		ArrayList<String> sequenceList = new ArrayList<String>();
 		try {
 			line = read.readLine();
 			while(line != null) {
@@ -94,7 +95,7 @@ public class GeneBankCreateBTree {
 				line = line.replaceAll("[^a-zA-Z/]","");
 				if(line.contains("origin")){
 					System.out.println("inside contains origin");
-					sequence = "";
+					sequence = "";//BIGCHANGE
 					line = read.readLine();
 					line = line.replaceAll("[^a-zA-Z/]","");
 					readIn = true;
@@ -104,75 +105,76 @@ public class GeneBankCreateBTree {
 					System.out.println(sequence);
 					readIn = false;
 					int i = 0;
+					sequenceList.add(sequence);
 					System.out.println("Sequence length: " + seqLength);
 					System.out.println("sequence.length():" + sequence.length());
-					while(i+seqLength <= sequence.length()) {
-						value = 0;
-						range = sequence.substring(i, i+seqLength);
-						if(!range.contains("n")) {
-							if(range.matches("^[actg]+$")) {
-								for(int j = 0; j < range.length(); j ++){
-									x = range.charAt(j) ;
-									if(x == 'a')
-										value = value * 4 + 0b00;
-									else if(x == 'c')
-										value = value * 4 + 0b01;
-									else if(x == 'g')
-										value = value * 4 + 0b10;
-									else if(x == 't')
-										value = value * 4 + 0b11;
-								}
-								if (useCache && cache.cache.size() > 0){
-									found = false;
-									for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++/*Object b : cache.cache*/){
-
-										BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
-
-										//	System.out.println(bt);
-
-										for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
-											//	System.out.println("Stuck inside nested for");
-
-											BTree.BTreeNode.TreeObject t = /*(BTree.BTreeNode.TreeObject)*/ bt.objects.get(sIndex);
-											//	System.out.println("value of sequence: " + t.getSequence());
-											if (value == t.getSequence()){
-//												System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
-//												System.out.print("val: " + value + " FB:" + t.getFreq());
-												t.incrementFreq();
-//												System.out.println(" FA: " + t.getFreq());
-												cache.getObject(bt);
-												found = true;
-												break;
-												//bt.writeNode();
-											}
-											else {
-												BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
-//												System.out.println("CacheSize: " + cache.cache.size());
-												obj.writeNode();
-											}
-										}
-										if (found){
-//											System.out.println("Out of loops");
-											break;
-										}
-									}
-								}
-								else{
-									if (useCache){
-										cache.addObject(tree.insertNode(value));
-//										System.out.println("CacheSize: " + cache.cache.size());
-									}
-									else{
-										tree.insertNode(value);
-									}
-								}
-
-							}
-							else
-								throw new IOException(gbk + "is not properly formatted");
-						}
-						i++;
-					}
+					//					while(i+seqLength <= sequence.length()) {
+					//						value = 0;
+					//						range = sequence.substring(i, i+seqLength);
+					//						if(!range.contains("n")) {
+					//							if(range.matches("^[actg]+$")) {
+					//								for(int j = 0; j < range.length(); j ++){
+					//									x = range.charAt(j) ;
+					//									if(x == 'a')
+					//										value = value * 4 + 0b00;
+					//									else if(x == 'c')
+					//										value = value * 4 + 0b01;
+					//									else if(x == 'g')
+					//										value = value * 4 + 0b10;
+					//									else if(x == 't')
+					//										value = value * 4 + 0b11;
+					//								}
+					//								if (useCache && cache.cache.size() > 0){
+					//									found = false;
+					//									for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++/*Object b : cache.cache*/){
+					//
+					//										BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
+					//
+					//										//	System.out.println(bt);
+					//
+					//										for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
+					//											//	System.out.println("Stuck inside nested for");
+					//
+					//											BTree.BTreeNode.TreeObject t = /*(BTree.BTreeNode.TreeObject)*/ bt.objects.get(sIndex);
+					//											//	System.out.println("value of sequence: " + t.getSequence());
+					//											if (value == t.getSequence()){
+					////												System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
+					////												System.out.print("val: " + value + " FB:" + t.getFreq());
+					//												t.incrementFreq();
+					////												System.out.println(" FA: " + t.getFreq());
+					//												cache.getObject(bt);
+					//												found = true;
+					//												break;
+					//												//bt.writeNode();
+					//											}
+					//											else {
+					//												BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
+					////												System.out.println("CacheSize: " + cache.cache.size());
+					//												obj.writeNode();
+					//											}
+					//										}
+					//										if (found){
+					////											System.out.println("Out of loops");
+					//											break;
+					//										}
+					//									}
+					//								}
+					//								else{
+					//									if (useCache){
+					//										cache.addObject(tree.insertNode(value));
+					////										System.out.println("CacheSize: " + cache.cache.size());
+					//									}
+					//									else{
+					//										tree.insertNode(value);
+					//									}
+					//								}
+					//
+					//							}
+					//							else
+					//								throw new IOException(gbk + "is not properly formatted");
+					//						}
+					//						i++;
+					//					}
 					//continue;
 				}
 				if(readIn) {
@@ -192,12 +194,89 @@ public class GeneBankCreateBTree {
 		}
 
 		try {
+			
 			read.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("Closing");
+		
+		BTree tree = new BTree(seqLength, degree, gbk);
+		System.out.println("Sequence length: " + seqLength);
+		System.out.println("Degree: " + degree);
+		System.out.println("File: " + gbk);
+		
+		for (String s : sequenceList){
+			int i = 0;
+			while(i+seqLength <= s.length()) {
+				value = 0;
+				range = s.substring(i, i+seqLength);
+				if(!range.contains("n")) {
+					if(range.matches("^[actg]+$")) {
+						for(int j = 0; j < range.length(); j ++){
+							x = range.charAt(j) ;
+							if(x == 'a')
+								value = value * 4 + 0b00;
+							else if(x == 'c')
+								value = value * 4 + 0b01;
+							else if(x == 'g')
+								value = value * 4 + 0b10;
+							else if(x == 't')
+								value = value * 4 + 0b11;
+						}
+						if (useCache && cache.cache.size() > 0){
+							found = false;
+							for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++/*Object b : cache.cache*/){
+
+								BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
+
+								//	System.out.println(bt);
+
+								for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++/*BTree.BTreeNode.TreeObject t : bt.objects*/){
+									//	System.out.println("Stuck inside nested for");
+
+									BTree.BTreeNode.TreeObject t = /*(BTree.BTreeNode.TreeObject)*/ bt.objects.get(sIndex);
+									//	System.out.println("value of sequence: " + t.getSequence());
+									if (value == t.getSequence()){
+										//									System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
+										//									System.out.print("val: " + value + " FB:" + t.getFreq());
+										t.incrementFreq();
+										//									System.out.println(" FA: " + t.getFreq());
+										cache.getObject(bt);
+										found = true;
+										break;
+										//bt.writeNode();
+									}
+									else {
+										BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
+										//									System.out.println("CacheSize: " + cache.cache.size());
+										obj.writeNode();
+									}
+								}
+								if (found){
+									//								System.out.println("Out of loops");
+									break;
+								}
+							}
+						}
+						else{
+							if (useCache){
+								cache.addObject(tree.insertNode(value));
+								//							System.out.println("CacheSize: " + cache.cache.size());
+							}
+							else{
+								tree.insertNode(value);
+							}
+						}
+
+					}
+					else
+						throw new IOException(gbk + "is not properly formatted");
+				}
+				i++;
+			}
+		}
 
 		tree.printBTree();
 
@@ -205,5 +284,7 @@ public class GeneBankCreateBTree {
 			long time = System.currentTimeMillis()-start;
 			System.out.println("Total time: " + time);
 		}
+		System.out.println("Number of Nodes: " + tree.numberOfNodes);
+		tree.writeBTree();
 	}
 }
