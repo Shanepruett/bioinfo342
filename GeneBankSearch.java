@@ -52,10 +52,10 @@ public class GeneBankSearch {
                         	try{
                         		debugLevel = Integer.parseInt(args[4]);
                         	} catch (NumberFormatException e){
-                        		throw new invalidArgumentException(error+ "\ndebug must be of type int.");
+                        		throw new IllegalArgumentException("\ndebug must be of type int.");
                         	}
                         	if(debugLevel != 1 & debugLevel != 0)
-                        		throw new invalidArgumentException(error+ "\ndebug must be 0 or 1.");
+                        		throw new IllegalArgumentException("\ndebug must be 0 or 1.");
                         }
                 }
                 
@@ -160,7 +160,7 @@ public class GeneBankSearch {
                 }
                 
                 if(debugLevel == 1){
-        			long totalTime = System.currentTimeMillis() - startTime;
+        			long totalTime = System.currentTimeMillis() - start;
         			System.out.println("Total Time was "+ totalTime );
         		}
         } 
