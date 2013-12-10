@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GeneBankSearch {
         @SuppressWarnings("resource")
@@ -9,6 +10,7 @@ public class GeneBankSearch {
                 int debugLevel, cacheSize = 0;
                 boolean useCache;
                 String BTreeFile, query;
+                ArrayList<Long> queryList = new ArrayList<Long>();
 
                 /* Cache size and debug level are ignored, debug level set to default: 0 */
                 if(args.length == 3) 
@@ -105,15 +107,15 @@ public class GeneBankSearch {
 
                 try {
                         read = new BufferedReader(new FileReader(queryFile));
-                        BTree tree = new BTree(BTreeFile);
 //TODO:                int stringLength = tree.sequenceLength;
                         
                         /* While there is more to be read in the query, remove all spaces, etc */
                         while((nextLine = read.readLine()) != null) {
                                 nextLine = nextLine.replaceAll("[^a-zA-Z/]","");
                                 nextLine = nextLine.toLowerCase();
+                                sequence = 0;
                                 
-                                System.out.println(nextLine);
+                    //            System.out.println(nextLine);
                                 
                                 /* Checks to see if line contains an n, if not continue parsing file */
                                 if(!nextLine.contains("n")) {
@@ -135,9 +137,13 @@ public class GeneBankSearch {
                                                         sequence = sequence * 4 + 0b10;
                                         }
                                         
+//                                        System.out.println("Sequence " + sequence);
+//                                        System.out.println("Line" + nextLine);
+//                                        System.out.println("");
+                                        queryList.add(sequence);
 //TODO:                                frequency = tree.getSequence......................?;
-                                        if(frequency != 0)
-                                                System.out.println(nextLine + ":" + frequency);
+//                                        if(frequency != 0)
+//                                                System.out.println(nextLine + ":" + frequency);
                                 }
                                 else throw new IOException("File provided is formatted incorrectly.");
                         }
@@ -158,10 +164,39 @@ public class GeneBankSearch {
                                 e1.printStackTrace();
                         }
                 }
+                BTree tree = new BTree(BTreeFile);
+                
+                tree.printBTree();
+                
+                for(Long l : queryList) {
+//                	System.out.println("Value" + l);
+                	BTree.BTreeNode.TreeObject querySequence = BTreeSearch(tree, tree.root, l);
+                	if(querySequence != null)
+                		System.out.println(querySequence);
+                }
                 
                 if(debugLevel == 1){
         			long totalTime = System.currentTimeMillis() - start;
         			System.out.println("Total Time was "+ totalTime );
         		}
         } 
+        
+        public static BTree.BTreeNode.TreeObject BTreeSearch(BTree tree, BTree.BTreeNode xnode, Long ksequence) {
+        	int i = 1;
+        	
+        	while(i <= xnode.currentObjects && ksequence > xnode.objects.get(i-1).getSequence()) {
+        		i++;
+        	}
+        	
+        	if(i <= xnode.currentObjects && ksequence == xnode.objects.get(i-1).getSequence()) {
+        		return xnode.objects.get(i-1);
+        	}
+        	else if(xnode.leaf) {
+        		return null;
+        	}
+        	else {
+        		BTree.BTreeNode read = tree.getNode(xnode.childNodeLocations.get(i-1));
+        		return BTreeSearch(tree, read, ksequence);
+        	}
+        }
 }

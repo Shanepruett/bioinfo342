@@ -62,6 +62,7 @@ public class GeneBankCreateBTree {
 
 		if(args[1] == "0") {
 			degree = 4096/(sizelong*(2*seqLength) + sizeint*2*seqLength + sizeint*(2*seqLength+1) + sizeint + sizeint);
+			System.out.println("Degree: " + degree);
 		}
 
 		try {
@@ -246,6 +247,6 @@ public class GeneBankCreateBTree {
 			System.out.println("Total time: " + time);
 		}
 		System.out.println("Number of Nodes: " + tree.numberOfNodes);
-		tree.writeBTree();
+//		tree.writeBTree();
 	}
 }
