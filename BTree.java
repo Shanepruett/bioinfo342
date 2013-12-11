@@ -38,7 +38,9 @@ public class BTree{
 	// This is the root Node
 	public BTreeNode root;
 
-
+	public int getSequenceLength() {
+		return this.sequenceLength;
+	}
 
 	/**
 	 * This is the constructor of the BTree which will be used when its a new BTree
