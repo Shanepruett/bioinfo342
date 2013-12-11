@@ -8,9 +8,9 @@ import java.util.NoSuchElementException;
  *  This Class is used as a generic Most Recently Used cache
  *
  */
-public class Cache <E> {
+public class Cache{
 
-	public java.util.LinkedList<E> cache;
+	public java.util.LinkedList<BTree.BTreeNode> cache;
 	private int max;
 
 	/**
@@ -19,7 +19,7 @@ public class Cache <E> {
 	public Cache(int size){
 
 		// the cache uses LinkedList
-		cache = new java.util.LinkedList<E>();
+		cache = new java.util.LinkedList<BTree.BTreeNode>();
 		max = size;
 
 	}
@@ -28,9 +28,9 @@ public class Cache <E> {
 	 * @param findObject The generic object to search the cache for
 	 * @return returns the object if it is found, returns null if its not found
 	 */
-	public E getObject(E findObject){
+	public BTree.BTreeNode getObject(BTree.BTreeNode findObject){
 
-		E retObject = null;
+		BTree.BTreeNode retObject = null;
 
 		// this will find the index of the object if it is found
 		int find = cache.indexOf(findObject);
@@ -52,14 +52,18 @@ public class Cache <E> {
 //		return cache.get(index);
 //	}
 	
-	public BTree.BTreeNode.TreeObject getObject(long seq){
+	public BTree.BTreeNode getObject(int location){
 		
+		BTree.BTreeNode retObject = null;
 		
+		for (int i = 0; i < cache.size(); i++){
+			if (cache.get(i).equals(location)){
+				cache.addFirst(cache.remove(i));
+				retObject = cache.peek();
+			}
+		}
 		
-		
-		
-		
-		return null;
+		return retObject;
 	}
 	
 	
@@ -67,7 +71,7 @@ public class Cache <E> {
 	/**
 	 * @param object the generic object to add to the cache
 	 */
-	public E addObject(E object){
+	public BTree.BTreeNode addObject(BTree.BTreeNode object){
 
 		// if the cache is not max size
 		if (cache.size() < max){
@@ -78,7 +82,7 @@ public class Cache <E> {
 		// when the cache is max
 		else {
 			// remove the oldest object, add new object to beginning
-			E removed = cache.removeLast();
+			BTree.BTreeNode removed = cache.removeLast();
 			cache.addFirst(object);
 			return removed;
 		}
@@ -89,9 +93,9 @@ public class Cache <E> {
 	/**
 	 * @return this method is not used in the Test class, but is implemented
 	 */
-	public E removeObject(E removeObject){
+	public BTree.BTreeNode removeObject(BTree.BTreeNode removeObject){
 		
-		E retObject = null;
+		BTree.BTreeNode retObject = null;
 		
 		int find = cache.indexOf(removeObject);
 		if (find >= 0){
