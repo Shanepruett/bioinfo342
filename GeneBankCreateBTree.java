@@ -12,12 +12,14 @@ public class GeneBankCreateBTree {
 	public static void main(String[] args) throws IOException {
 		int debugLevel = 0, cacheSize = 0, degree = 0, seqLength;
 		boolean useCache =false;
+		//Cache<BTree.BTreeNode> cache = null;
+		
 		String gbk;
 
 		/* No cache size or debug level provided */
 		if(args.length == 4) {
 			debugLevel = 0;
-			if(Integer.parseInt(args[1]) == 1)
+			if(Integer.parseInt(args[0]) == 1)
 				throw new IllegalArgumentException("If using a cache, please provide cache size");
 		}
 		/* 5 arguments provided, using cache which means that cache size is provided */
@@ -50,15 +52,13 @@ public class GeneBankCreateBTree {
 			catch(NumberFormatException e) {
 				throw new IllegalArgumentException("Please enter cache size as an int value");
 			}
-			if(debugLevel != 0){
-				try{
-					debugLevel = Integer.parseInt(args[5]);
-				} catch (NumberFormatException e){
-					throw new IllegalArgumentException("\ndebug must be of type int.");
-				}
-				if(debugLevel != 1 && debugLevel != 0)
-					throw new IllegalArgumentException("\ndebug must be 0 or 1.");
-			} 
+			try{
+				debugLevel = Integer.parseInt(args[5]);
+			} catch (NumberFormatException e){
+				throw new IllegalArgumentException("\ndebug must be of type int.");
+			}
+			if(debugLevel != 1 && debugLevel != 0)
+				throw new IllegalArgumentException("\ndebug must be 0 or 1.");
 		}
 		else
 			throw new IllegalArgumentException("Expected arguments: \n " +
@@ -91,13 +91,9 @@ public class GeneBankCreateBTree {
 		
 		gbk = args[2];
 
-		Cache<BTree.BTreeNode> cache = null;
 		boolean found;
 
-		if(useCache){
-			cache = new Cache(cacheSize);
-//			System.out.println("using cache!!");
-		}
+
 
 		String line = "", sequence = "", range;
 		long value, start = System.currentTimeMillis();
@@ -165,6 +161,13 @@ public class GeneBankCreateBTree {
 //		System.out.println("Closing");
 
 		BTree tree = new BTree(seqLength, degree, gbk);
+		
+		if(useCache){
+			tree.useCache(cacheSize);
+//			cache = new Cache<BTree.BTreeNode>(cacheSize);
+			System.out.println("using cache!!");
+		}
+		
 //		System.out.println("Sequence length: " + seqLength);
 //		System.out.println("Degree: " + degree);
 //		System.out.println("File: " + gbk);
@@ -187,50 +190,49 @@ public class GeneBankCreateBTree {
 							else if(x == 't')
 								value = value * 4 + 0b11;
 						}
+						tree.insertNode(value);
 						/* If we want to use cache and the cache is created (size > 0) */
-						if (useCache && cache.cache.size() > 0){
-							found = false;
-							/* For all spaces in cache */
-							for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++){
-								
-								/* bt node is created from cache at fIndex */
-								BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
-
-//								System.out.println("BTree node" + bt);
-								
-								/* For all bt objects */
-								for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++){
-									BTree.BTreeNode.TreeObject t = bt.objects.get(sIndex);
-									if (value == t.getSequence()){
-	//									System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
-										t.incrementFreq();
-										//                                                                        System.out.println(" FA: " + t.getFreq());
-										cache.getObject(bt);
-										found = true;
-										break;
-										//bt.writeNode();
-									}
-									else {
-										BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
-										//                                                                        System.out.println("CacheSize: " + cache.cache.size());
-										obj.writeNode();
-									}
-								}
-								if (found){
-//									System.out.println("Out of loops");
-									break;
-								}
-							}
-						}
-						else{
-							if (useCache){
-								cache.addObject(tree.insertNode(value));
-//								System.out.println("CacheSize: " + cache.cache.size());
-							}
-							else{
-								tree.insertNode(value);
-							}
-						}
+//						if (useCache && cache.cache.size() > 0){
+//							found = false;
+//							/* For all spaces in cache */
+//							for (int fIndex = 0; fIndex < cache.cache.size(); fIndex++){
+//								
+//								/* bt node is created from cache at fIndex */
+//								BTree.BTreeNode bt = (BTree.BTreeNode) cache.cache.get(fIndex);
+//								
+//								/* For all bt objects */
+//								for (int sIndex = 0; sIndex < bt.objects.size(); sIndex++){
+//									BTree.BTreeNode.TreeObject t = bt.objects.get(sIndex);
+//									if (value == t.getSequence()){
+//	//								System.out.println("A VALUE IS EQUAL: " + t.getSequence() + "=" + value + " f:" + t.getFreq());
+//										t.incrementFreq();
+//										//                                                                        System.out.println(" FA: " + t.getFreq());
+//										cache.getObject(bt);
+//										found = true;
+//										break;
+//										//bt.writeNode();
+//									}
+//									else {
+//										BTree.BTreeNode obj = (BTree.BTreeNode) cache.addObject(tree.insertNode(value));
+//										//                                                                        System.out.println("CacheSize: " + cache.cache.size());
+//										obj.writeNode();
+//									}
+//								}
+//								if (found){
+////									System.out.println("Out of loops");
+//									break;
+//								}
+//							}
+//						}
+//						else{
+//							if (useCache){
+//								cache.addObject(tree.insertNode(value));
+////								System.out.println("CacheSize: " + cache.cache.size());
+//							}
+//							else{
+//								
+//							}
+//						}
 
 					}
 					else
@@ -240,8 +242,10 @@ public class GeneBankCreateBTree {
 			}
 		}
 
+		if (useCache) tree.finishBTree();
+		
 //		tree.printBTree();
-
+		System.out.println(debugLevel);
 		if(debugLevel == 1){
 //			System.out.println("RECURSIVE RESULTS");
 ////			tree.printBTree();
@@ -251,6 +255,7 @@ public class GeneBankCreateBTree {
 				File dump = new File("dump");
 				writer = new BufferedWriter(new FileWriter(dump));
 				tree.printBTree(writer);
+				System.out.println("DEBUG DONE");
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {

@@ -8,36 +8,51 @@ public class GeneBankSearch {
         @SuppressWarnings("resource")
         public static void main(String[] args) {
                 int debugLevel, cacheSize = 0;
-                boolean useCache;
+                boolean useCache = false;
                 String BTreeFile, query;
                 ArrayList<Long> queryList = new ArrayList<Long>();
 
                 /* Cache size and debug level are ignored, debug level set to default: 0 */
-                if(args.length == 3) 
+                if(args.length == 3) {
                         debugLevel = 0;
+                        if(Integer.parseInt(args[0]) == 1)
+                        	throw new IllegalArgumentException("If using a cache, please provide cache size");
+                }
                 
+                else if(args.length == 4 && Integer.parseInt(args[0]) == 1) {
+        			try{
+        				useCache = true;
+        				cacheSize = Integer.parseInt(args[3]);
+        			}
+        			catch(NumberFormatException e) {
+        				throw new IllegalArgumentException("Please enter cache size as an int value");
+        			}
+        			debugLevel = 0;
+        		}
                 /* Cache size provided. Debug level ignored, debug level set to default: 0 */
-                else if(args.length == 4) {
+                else if(args.length == 4 && Integer.parseInt(args[0]) == 0) {
                         /* Cache size */
                         try {
-                                cacheSize = Integer.parseInt(args[3]);
+                        	if(Integer.parseInt(args[3]) == 0 || Integer.parseInt(args[3]) == 1)
+                        		debugLevel = Integer.parseInt(args[3]);
+                        	else
+                        		throw new IllegalArgumentException("Please enter value 0 or 1 for debugLevel");
                         }
                         catch(NumberFormatException e) {
-                                throw new IllegalArgumentException("Please enter cache size as an int value");
+                                throw new IllegalArgumentException("Please enter debugLevel as an int value");
                         }
-                        
-                        debugLevel = 0;
                 }
                 
                 /* Cache size and debug level are provided */
-                else if(args.length == 5) {
+                else if(args.length == 5 && Integer.parseInt(args[0]) == 1) {
                         
                         /* Cache size */
                         try {
-                                cacheSize = Integer.parseInt(args[3]);
+                        	useCache = true;
+                            cacheSize = Integer.parseInt(args[3]);
                         }
                         catch(NumberFormatException e) {
-                                throw new IllegalArgumentException("Please enter cache size as an int value");
+                            throw new IllegalArgumentException("Please enter cache size as an int value");
                         }
                         
                         /* Debug level */
@@ -47,18 +62,9 @@ public class GeneBankSearch {
                         catch (NumberFormatException e){
                                 throw new IllegalArgumentException("Please enter debug level as an int value: 0 or 1");
                         }
-                        
-
-                        //debug
-                        if(debugLevel != 0){
-                        	try{
-                        		debugLevel = Integer.parseInt(args[4]);
-                        	} catch (NumberFormatException e){
-                        		throw new IllegalArgumentException("\ndebug must be of type int.");
-                        	}
-                        	if(debugLevel != 1 & debugLevel != 0)
-                        		throw new IllegalArgumentException("\ndebug must be 0 or 1.");
-                        }
+                       
+                        if(debugLevel != 1 || debugLevel != 0)
+                        	throw new IllegalArgumentException("\ndebug must be 0 or 1.");
                 }
                 
                 /* Catch error in number of arguments provided */
@@ -68,35 +74,31 @@ public class GeneBankSearch {
                                         "<btree file> <query file> [<cache size>]" +
                                         "[<debug level>]");
                 
-                System.out.println("debug level: " + debugLevel);
-                System.out.println("cache size: " + cacheSize);
-                
-                /* args[0] determines whether or not cache is used */
-                if(Integer.parseInt(args[0]) == 0) {
-                        useCache = false;
-                }
-                else if(Integer.parseInt(args[1]) == 1)
-                        useCache = true;
-                else
-                        throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
+//                /* args[0] determines whether or not cache is used */
+//                if(Integer.parseInt(args[0]) == 0) {
+//                        useCache = false;
+//                }
+//                else if(Integer.parseInt(args[1]) == 1)
+//                        useCache = true;
+//                else
+//                        throw new IllegalArgumentException("Please make first argument '0' for no cache or '1' to use cache");
 
                 /* BTree File name */
                 BTreeFile = args[1];
 
                 /* Query file */
                 query = args[2];
-
-                System.out.println("BTree file: " + BTreeFile);
-                System.out.println("Query file: " + query);
-
-                
+//
+//                System.out.println("BTree file: " + BTreeFile);
+//                System.out.println("Query file: " + query);
+//
+//                
                 
                 
                 
                 
                 String nextLine;
                 char value;
-                int frequency = 0;
                 long sequence = 0;
                 File queryFile = null;
                 long start = System.currentTimeMillis();
@@ -160,13 +162,13 @@ public class GeneBankSearch {
                                 throw new IOException("File is not working properly. Please check that file" +
                                                 "exists and is properly formatted.");
                         } catch (IOException e1) {
-                                // TODO Auto-generated catch block
                                 e1.printStackTrace();
                         }
                 }
                 BTree tree = new BTree(BTreeFile);
                 
-//                tree.printBTree();//TODO
+                if(useCache)
+                	tree.useCache(cacheSize);
                 
                 for(Long l : queryList) {
 //                	System.out.println("Value" + l);
@@ -174,11 +176,6 @@ public class GeneBankSearch {
                 	if(querySequence != null)
                 		System.out.println(querySequence);
                 }
-                
-                if(debugLevel == 1){
-        			long totalTime = System.currentTimeMillis() - start;
-        			System.out.println("Total Time was "+ totalTime );
-        		}
         } 
         
         public static BTree.BTreeNode.TreeObject BTreeSearch(BTree tree, BTree.BTreeNode xnode, Long ksequence) {
@@ -195,7 +192,7 @@ public class GeneBankSearch {
         		return null;
         	}
         	else {
-        		BTree.BTreeNode read = tree.getNode(xnode.childNodeLocations.get(i-1));
+        		BTree.BTreeNode read = tree.retrieveNode(xnode.childNodeLocations.get(i-1));
         		return BTreeSearch(tree, read, ksequence);
         	}
         }

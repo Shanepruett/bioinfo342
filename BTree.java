@@ -31,6 +31,8 @@ public class BTree{
 	private String filename; // filename of binary file
 	private FileChannel fc;
 	private RandomAccessFile aFile;
+	private boolean useCache = false;
+	private Cache cache;
 //	private ByteBuffer buf;
 
 	// This is the root Node
@@ -47,6 +49,8 @@ public class BTree{
 	public BTree(int sequenceLength, int degree, String filename){
 		this.sequenceLength = sequenceLength;
 		this.degree = degree;
+		
+		
 		
 		ByteBuffer buf;
 
@@ -123,10 +127,10 @@ public class BTree{
 //			System.out.println("Buff size:" + buf.remaining());
 			buf.get(dst, 0, this.headerSize);
 //			System.out.println("Buff size:" + buf.remaining());
-			for (int i = 0; i < headerSize; i++){
-				System.out.print(dst[i]);
-			}
-			System.out.println();
+//			for (int i = 0; i < headerSize; i++){
+//				System.out.print(dst[i]);
+//			}
+//			System.out.println();
 			
 			this.nodeSize = byteArrayAsInt(dst,0);
 			this.sequenceLength = byteArrayAsInt(dst,32);
@@ -164,7 +168,21 @@ public class BTree{
 
 	}
 
-
+	/**
+	 * @param size
+	 * @return
+	 */
+	public boolean useCache(int size){
+		
+		if (size > 0){
+			this.cache = new Cache(size);
+			this.useCache = true;
+		}
+		
+		return useCache;
+	}
+	
+	
 	/**
 	 * This method takes the simple location value of the Node and returns the location of which it can be
 	 * found in the bin file.
@@ -195,6 +213,36 @@ public class BTree{
 		return getRoot(node.parentNodeLocation);
 	}
 
+	public BTreeNode retrieveNode(int location){
+		// TODO
+		if (useCache){
+			BTreeNode node = cache.getObject(location);
+			if (node == null){
+				BTreeNode removed = cache.addObject(getNode(location));
+				if (removed != null)
+					removed.writeNode();
+				return cache.getObject(location);
+			} else {
+				return node;
+			}
+			
+		} else {
+			return getNode(location);
+		}
+	}
+	
+	
+	public boolean finishBTree(){
+		//TODO
+		
+		while (cache.cache.size() > 0){
+			BTreeNode removed = cache.cache.remove(0);
+			removed.writeNode();
+		}
+		
+		
+		return cache.cache.size() == 0;
+	}
 
 	/**
 	 * This method returns a Node given its location in the bin file
@@ -442,7 +490,7 @@ public class BTree{
 		// To be the Right Child after Split
 		BTreeNode zRightChild = new BTreeNode(xParent.selfNodeLocation);
 		// To be the Left Child after Split
-		BTreeNode yLeftChild = getNode(xParent.childNodeLocations.get(iXChild-1));
+		BTreeNode yLeftChild = retrieveNode(xParent.childNodeLocations.get(iXChild-1)); //getNode replaced
 		yLeftChild.parentNodeLocation = xParent.selfNodeLocation;
 
 
@@ -551,7 +599,7 @@ public class BTree{
 			//			System.out.println("in insertNonFull size of childLocations: " + xNode.childNodeLocations.size());
 			//			System.out.println(xNode);
 
-			BTreeNode child = getNode(xNode.childNodeLocations.get(i-1));
+			BTreeNode child = retrieveNode(xNode.childNodeLocations.get(i-1));// getNode replaced
 			if (child.currentObjects == (degree * 2 - 1)){
 				splitChild(xNode,i);
 				if (kSeq >= xNode.objects.get(i-1).sequence){
@@ -566,7 +614,7 @@ public class BTree{
 				}
 				
 			}
-			return insertNonFull(getNode(xNode.childNodeLocations.get(i-1)), kSeq);
+			return insertNonFull(retrieveNode(xNode.childNodeLocations.get(i-1)), kSeq); // getNode replaced
 
 		}
 		
@@ -697,20 +745,19 @@ public class BTree{
 
 		// Testing of constructor
 //		BTree theTree = new BTree (5, 4, "filename.gbk");
-//		System.out.println();
+////		System.out.println();
 //		for (int i = 1; i < 512; i++){
 //			//			System.out.println("Adding " + i  + "L");
 //			theTree.insertNode((long)(i % 256));
 //		}
-//		theTree.printBTree();
+////		theTree.printBTree();
 //		System.out.println("numberOfNode: " +theTree.numberOfNodes); 
 
 
 		// TODO HERE!
 		// Testing of filename Constructor
 //				BTree aTree = new BTree ("filename.gbk.btree.data.5.4"/*"filename.gbk.btree.data.3.3"*/);
-//				System.out.println();
-//				aTree.printBTree();
+//				System.out.println("numberOfNode: " +aTree.numberOfNodes);
 
 	}
 
@@ -730,6 +777,18 @@ public class BTree{
 		public ArrayList<TreeObject> objects;
 
 		private int selfNodeLocation;
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			int other = (Integer) obj;
+			if (selfNodeLocation != other)
+				return false;
+			return true;
+		}
 
 		/**
 		 * Create an empty Node
@@ -1122,12 +1181,16 @@ public class BTree{
 
 			@Override
 			public String toString() {
-				return "freq:" + frequency + " seq: " + getSequenceString();
+				return getSequenceString().toLowerCase() + ": " + frequency;
 			}
 
 			private BTreeNode getOuterType() {
 				return BTreeNode.this;
 			}
+		}
+
+		private BTree getOuterType() {
+			return BTree.this;
 		}
 	}
 }
